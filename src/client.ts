@@ -110,6 +110,10 @@ export class OptiShieldClient {
   private baseUrl: string
   private apiKey: string
   private loggedIn: boolean = false
+  /** Flag: si es true, la próxima llamada API auto-dispara login() */
+  private needsAuth: boolean = false
+  /** Evita múltiples login simultáneos */
+  private loginPromise: Promise<void> | null = null
 
   constructor(opts: OptiShieldOptions = {}) {
     this.apiKey = opts.apiKey || ''
@@ -121,6 +125,9 @@ export class OptiShieldClient {
       if (saved?.apiKey) {
         this.apiKey = saved.apiKey
         this.loggedIn = true
+      } else {
+        // No hay apiKey ni credenciales guardadas → auto-login en 1ª llamada
+        this.needsAuth = true
       }
     } else {
       this.loggedIn = true
@@ -134,6 +141,56 @@ export class OptiShieldClient {
       },
       timeout: 30_000,
     })
+
+    // Si necesita autenticación, mostrar mensaje inmediatamente
+    if (this.needsAuth) {
+      // No bloqueamos el constructor — el login se hará en la 1ª llamada
+      console.log('')
+      console.log('╔══════════════════════════════════════════════════╗')
+      console.log('║     🔐 OptiShield API — Sin autenticar           ║')
+      console.log('╠══════════════════════════════════════════════════╣')
+      console.log('║                                                  ║')
+      console.log('║   No se encontraron credenciales guardadas.      ║')
+      console.log('║   La primera llamada a la API iniciará           ║')
+      console.log('║   automáticamente la autenticación por           ║')
+      console.log('║   dispositivo.                                   ║')
+      console.log('║                                                  ║')
+      console.log('║   También puedes configurar manualmente:         ║')
+      console.log('║                                                  ║')
+      console.log('║   const api = new OptiShieldClient({             ║')
+      console.log('║     apiKey: \'tu-api-key\'                        ║')
+      console.log('║   })                                             ║')
+      console.log('╚══════════════════════════════════════════════════╝')
+      console.log('')
+    }
+  }
+
+  /**
+   * Si el cliente no está autenticado, dispara login() automáticamente.
+   * Se llama al inicio de cada método público que requiera API Key.
+   */
+  private async ensureAuth(): Promise<void> {
+    if (this.loggedIn && !!this.apiKey) return
+    if (!this.needsAuth) {
+      throw new Error(
+        'Se requiere apiKey. Pásala en el constructor o usa api.login().'
+      )
+    }
+
+    // Si ya hay un login en progreso, esperar a que termine
+    if (this.loginPromise) {
+      await this.loginPromise
+      return
+    }
+
+    // Iniciar login automático
+    this.loginPromise = this.login()
+    try {
+      await this.loginPromise
+      this.needsAuth = false
+    } finally {
+      this.loginPromise = null
+    }
   }
 
   /**
@@ -331,6 +388,7 @@ export class OptiShieldClient {
       interval?: number
     }
   ): Promise<ScraperResult> {
+    await this.ensureAuth()
     const maxRetries = pollOpts?.maxRetries ?? DEFAULT_POLL_MAX_RETRIES
     const interval = pollOpts?.interval ?? DEFAULT_POLL_INTERVAL
 
@@ -421,6 +479,7 @@ export class OptiShieldClient {
     name: string,
     params: Record<string, any> = {}
   ): Promise<ScraperResult> {
+    await this.ensureAuth()
     const res = await this.client.post(
       `/scrapers/${name}/execute`,
       params,
@@ -464,6 +523,7 @@ export class OptiShieldClient {
     mimetype: string,
     opts?: UploadOptions
   ): Promise<UploadResult> {
+    await this.ensureAuth()
     const expiresInDays = opts?.expiresInDays ?? DEFAULT_EXPIRES_DAYS
 
     const form = new FormData()
@@ -593,18 +653,21 @@ export class OptiShieldClient {
 
   /** Lista todos los scrapers disponibles */
   async listScrapers(): Promise<ScraperList> {
+    await this.ensureAuth()
     const res = await this.client.get('/scrapers')
     return res.data as ScraperList
   }
 
   /** Obtiene info de un scraper específico */
   async getScraperInfo(name: string) {
+    await this.ensureAuth()
     const res = await this.client.get(`/scrapers/${name}`)
     return res.data
   }
 
   /** Obtiene estadísticas de uso de la API */
   async getUsage(days: number = 30): Promise<UsageStats> {
+    await this.ensureAuth()
     const res = await this.client.get('/scrapers/usage', {
       params: { days },
     })
@@ -613,6 +676,7 @@ export class OptiShieldClient {
 
   /** Verifica que el servidor esté vivo y la API key sea válida */
   async ping(): Promise<{ ok: boolean; latency: number }> {
+    await this.ensureAuth()
     const start = Date.now()
     await this.client.get('/health')
     return { ok: true, latency: Date.now() - start }
@@ -624,6 +688,7 @@ export class OptiShieldClient {
     buildTime: string
     uptime: number
   }> {
+    await this.ensureAuth()
     const res = await this.client.get('/version')
     return res.data
   }
@@ -659,6 +724,7 @@ export class OptiShieldClient {
     url: string,
     opts?: DownloadOptions
   ): Promise<DownloadResult> {
+    await this.ensureAuth()
     const timeout = opts?.timeout ?? 60_000
 
     const res = await this.client.get('/download', {
@@ -743,6 +809,7 @@ export class OptiShieldClient {
    * ```
    */
   async downloadUpload(uploadUrl: string): Promise<DownloadResult> {
+    await this.ensureAuth()
     // Verificar expiración local
     const fileUrl = await this.getUploadUrl(uploadUrl)
     if (!fileUrl) {
@@ -810,6 +877,7 @@ export class OptiShieldClient {
     originalUrl: string
     visits: number
   }> {
+    await this.ensureAuth()
     const res = await this.client.post('/shorturl', { url })
     const data = res.data as any
     const baseHost = this.baseUrl.replace('/api', '') || 'https://optishield.uk'

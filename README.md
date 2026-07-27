@@ -2,7 +2,7 @@
 
 Cliente oficial para la [API de OptiShield](https://optishield.uk/). Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y más. Incluye sistema de workers con polling, subida de archivos con expiración y proxy de descargas anti-CORS.
 
-## Instalación
+## 🚀 Inicio rápido (auto-login — recomendado)
 
 > ⚠️ **Importante:** El paquete aún no está publicado en npm. Instálalo directamente desde GitHub.
 
@@ -25,22 +25,31 @@ Una vez instalado, impórtalo en tu código:
 import { OptiShieldClient } from 'optishield-api'
 ```
 
-## 🔐 Inicio rápido (login por dispositivo — recomendado)
+## 🔐 Auto-login por dispositivo
 
-La forma más segura — sin necesidad de API key manual:
+La forma más segura — **sin necesidad de API key manual**. El módulo detecta automáticamente que no hay credenciales y genera una URL para que autorices este dispositivo:
 
 ```ts
 import { OptiShieldClient } from 'optishield-api'
 
 const api = new OptiShieldClient()
+// ⚡ Auto-detecta que no hay credenciales
+// La primera llamada a la API iniciará la autenticación
 
-// Inicia sesión con tu cuenta de OptiShield
-await api.login()
-// Las credenciales se guardan en ~/.optishield/credentials.json
-
-// ¡Listo! Ya puedes descargar
+// ¡Solo llama a cualquier método!
+// El módulo mostrará una URL para que autorices desde tu navegador
 const result = await api.youtube('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+// ↑ Esto auto-dispara el login por dispositivo si es necesario
+// Las credenciales se guardan en ~/.optishield/credentials.json
 console.log('🎵', result.result?.title)
+```
+
+También puedes hacer login manualmente si prefieres:
+
+```ts
+const api = new OptiShieldClient()
+await api.login() // Muestra la URL y espera a que autorices
+const result = await api.youtube('...')
 ```
 
 ## 🔑 O usar API Key directa
