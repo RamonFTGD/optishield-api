@@ -185,6 +185,19 @@ export class OptiShieldClient {
       timeout: 30_000,
     })
 
+    // Interceptor de peticiones: inyecta X-API-Key desde this.apiKey siempre
+    // (más confiable que modificar defaults.headers porque evita problemas
+    //  de referencias en distintas versiones de axios)
+    this.client.interceptors.request.use(
+      (config) => {
+        if (this.apiKey) {
+          config.headers['X-API-Key'] = this.apiKey
+        }
+        return config
+      },
+      (err) => Promise.reject(err)
+    )
+
     // Interceptor de respuestas: convierte errores HTTP en mensajes limpios
     this.client.interceptors.response.use(
       (res) => res,
