@@ -64,6 +64,49 @@ function clearCredentials(): void {
 }
 
 /**
+ * Extrae un mensaje de error limpio desde un error de Axios/Fetch.
+ * En lugar de mostrar el objeto completo con request/response, devuelve
+ * solo el mensaje relevante.
+ */
+function cleanError(err: any): string {
+  if (!err) return 'Error desconocido'
+
+  // Error de Axios con respuesta del servidor
+  if (err.response?.data?.error) {
+    return err.response.data.error
+  }
+  if (err.response?.data?.message) {
+    return err.response.data.message
+  }
+
+  // Código de estado sin mensaje
+  if (err.response?.status) {
+    const status = err.response.status
+    const reasons: Record<number, string> = {
+      400: 'Solicitud inválida (400)',
+      401: 'API key requerida o inválida (401)',
+      403: 'Sin permisos o plan inactivo (403)',
+      404: 'Recurso no encontrado (404)',
+      429: 'Límite de solicitudes alcanzado (429)',
+      500: 'Error interno del servidor (500)',
+    }
+    return reasons[status] || `Error HTTP ${status}`
+  }
+
+  // Error de red
+  if (err.code === 'ECONNREFUSED') return 'Conexión rechazada. El servidor no está disponible.'
+  if (err.code === 'ECONNRESET') return 'Conexión interrumpida por el servidor.'
+  if (err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) return 'Tiempo de espera agotado (timeout).'
+  if (err.code === 'ENOTFOUND') return 'Servidor no encontrado. Verifica la URL.'
+
+  // Error genérico
+  if (typeof err === 'string') return err
+  if (err.message) return err.message
+
+  return 'Error desconocido'
+}
+
+/**
  * Cache local de expiraciones de upload.
  * Map<uploadId, expiresAt>
  * Se limpia automáticamente al detectar expirados.
@@ -141,6 +184,21 @@ export class OptiShieldClient {
       },
       timeout: 30_000,
     })
+
+    // Interceptor de respuestas: convierte errores HTTP en mensajes limpios
+    this.client.interceptors.response.use(
+      (res) => res,
+      (err) => {
+        // Extraer solo el mensaje de error limpio, no el objeto completo
+        const cleanMsg = cleanError(err)
+        // Reemplazar el error con un Error simple que tenga el mensaje limpio
+        const cleanErr = new Error(cleanMsg)
+        // Preservar el status code para manejo condicional
+        ;(cleanErr as any).status = err.response?.status || 0
+        ;(cleanErr as any).data = err.response?.data || null
+        return Promise.reject(cleanErr)
+      }
+    )
 
     // Si necesita autenticación, mostrar mensaje inmediatamente
     if (this.needsAuth) {
@@ -547,16 +605,17 @@ export class OptiShieldClient {
         maxBodyLength: 200 * 1024 * 1024,
       })
     } catch (err: any) {
-      if (err.response?.status === 413) {
+      const status = err.status || err.response?.status
+      if (status === 413) {
         throw new Error('El archivo excede el límite de 100MB')
       }
-      if (err.response?.status === 403) {
+      if (status === 403) {
         throw new Error('API key sin permisos o plan inactivo. Verifica en https://optishield.uk/api-keys')
       }
-      if (err.response?.status === 429) {
+      if (status === 429) {
         throw new Error('Límite de solicitudes alcanzado. Renueva o mejora tu plan.')
       }
-      throw new Error(`Error al subir archivo: ${err.message}`)
+      throw new Error(`Error al subir archivo: ${err.message || err}`)
     }
 
     const data = res.data as { url: string; id?: string }
