@@ -4,11 +4,46 @@ Cliente oficial para la [API de OptiShield](https://optishield.uk/). Descarga vi
 
 ## Instalación
 
+> ⚠️ **Importante:** El paquete aún no está publicado en npm. Instálalo directamente desde GitHub.
+
 ```bash
-npm install optishield-api
+# Desde GitHub (recomendado)
+npm install github:RamonFTGD/optishield-api#BotWhatsapp-MD
+
+# O descarga el tarball directo
+# https://optishield.uk/module/optishield-api-1.0.0.tgz
+
+# O agrégalo a tu package.json:
+# "dependencies": {
+#   "optishield-api": "github:RamonFTGD/optishield-api#BotWhatsapp-MD"
+# }
 ```
 
-## Uso básico
+Una vez instalado, impórtalo en tu código:
+
+```ts
+import { OptiShieldClient } from 'optishield-api'
+```
+
+## 🔐 Inicio rápido (login por dispositivo — recomendado)
+
+La forma más segura — sin necesidad de API key manual:
+
+```ts
+import { OptiShieldClient } from 'optishield-api'
+
+const api = new OptiShieldClient()
+
+// Inicia sesión con tu cuenta de OptiShield
+await api.login()
+// Las credenciales se guardan en ~/.optishield/credentials.json
+
+// ¡Listo! Ya puedes descargar
+const result = await api.youtube('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+console.log('🎵', result.result?.title)
+```
+
+## 🔑 O usar API Key directa
 
 ```ts
 import { OptiShieldClient } from 'optishield-api'
