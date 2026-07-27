@@ -35,10 +35,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/optishield/optishield-api.git"
+    "url": "git+https://github.com/RamonFTGD/optishield-api.git"
   },
   "bugs": {
-    "url": "https://github.com/optishield/optishield-api/issues"
+    "url": "https://github.com/RamonFTGD/optishield-api/issues"
   },
   "homepage": "https://optishield.uk/",
   "engines": {
