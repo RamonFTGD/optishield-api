@@ -344,9 +344,11 @@ export class OptiShieldClient {
   logout(): void {
     this.apiKey = ''
     this.loggedIn = false
+    this.needsAuth = true  // Re-activar auto-login para la próxima llamada
     this.client.defaults.headers.common['X-API-Key'] = ''
     clearCredentials()
     console.log('🔓 Sesión cerrada. Credenciales eliminadas.')
+    console.log('   La próxima llamada a la API iniciará auto-login nuevamente.')
   }
 
   /**
