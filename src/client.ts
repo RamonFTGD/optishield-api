@@ -718,7 +718,7 @@ export class OptiShieldClient {
 
   /** Busca videos en YouTube */
   async youtubeSearch(query: string) {
-    return this.executeScraper('youtubesearch', { query })
+    return this.executeScraper('youtube-search', { query })
   }
 
   // ═══════════════════════════════════════════
