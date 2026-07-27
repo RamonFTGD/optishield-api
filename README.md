@@ -1,10 +1,12 @@
 # OptiShield API
 
-Cliente oficial para la [API de OptiShield](https://optishield.uk/). Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y más. Incluye sistema de workers con polling, subida de archivos con expiración y proxy de descargas anti-CORS.
+> Cliente oficial para la [API de OptiShield](https://optishield.uk/).
+> 
+> **32 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify, SoundCloud, Bandcamp, Apple Music, Reddit, Pinterest, Twitter/X y más. Incluye sistema de workers con polling, subida de archivos con expiración y proxy de descargas anti-CORS.
 
-## 🚀 Inicio rápido (auto-login — recomendado)
+---
 
-> ⚠️ **Importante:** El paquete aún no está publicado en npm. Instálalo directamente desde GitHub.
+## 📦 Instalación
 
 ```bash
 # Desde GitHub (recomendado)
@@ -19,368 +21,372 @@ npm install github:RamonFTGD/optishield-api#BotWhatsapp-MD
 # }
 ```
 
-Una vez instalado, impórtalo en tu código:
+---
 
-```ts
-import { OptiShieldClient } from 'optishield-api'
-```
+## 🚀 Inicio rápido
 
-## 🔐 Auto-login por dispositivo
-
-La forma más segura — **sin necesidad de API key manual**. El módulo detecta automáticamente que no hay credenciales y genera una URL para que autorices este dispositivo:
+### 🔐 Auto-login (recomendado — sin API key manual)
 
 ```ts
 import { OptiShieldClient } from 'optishield-api'
 
 const api = new OptiShieldClient()
-// ⚡ Auto-detecta que no hay credenciales
-// La primera llamada a la API iniciará la autenticación
+// ⚡ Sin credenciales → la primera llamada genera una URL automáticamente
 
-// ¡Solo llama a cualquier método!
-// El módulo mostrará una URL para que autorices desde tu navegador
-const result = await api.youtube('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-// ↑ Esto auto-dispara el login por dispositivo si es necesario
+const result = await api.youtubeSearch('música relajante')
+// ↑ Muestra URL, la abres en tu navegador, autorizas, ¡y listo!
 // Las credenciales se guardan en ~/.optishield/credentials.json
-console.log('🎵', result.result?.title)
+
+console.log('🎵 Resultados:', result.result?.data?.length)
 ```
 
-También puedes hacer login manualmente si prefieres:
-
-```ts
-const api = new OptiShieldClient()
-await api.login() // Muestra la URL y espera a que autorices
-const result = await api.youtube('...')
+**Respuesta real:**
+```json
+{
+  "scraper": "youtube-search",
+  "result": {
+    "success": true,
+    "data": [
+      {
+        "id": "ocCZPaskASo",
+        "title": "Musica para trabajar activo y alegre - Deep House Mix 2026 #95",
+        "url": "https://youtube.com/watch?v=ocCZPaskASo",
+        "duration": 13317,
+        "durationFormatted": "3:41:57",
+        "channel": "Deep Inovation",
+        "thumbnail": "https://i.ytimg.com/vi/ocCZPaskASo/hqdefault.jpg",
+        "views": 3531,
+        "viewsFormatted": "3.5K"
+      }
+    ],
+    "query": "música relajante",
+    "total": 9
+  },
+  "usage": { "used": 910, "max": 100000, "remaining": 99090 },
+  "timestamp": "2026-07-27T20:20:56.575Z"
+}
 ```
 
-## 🔑 O usar API Key directa
+### 🔑 O con API Key directa
 
 ```ts
 import { OptiShieldClient } from 'optishield-api'
 
 const api = new OptiShieldClient({
-  apiKey: 'tu-api-key' // Obténla en https://optishield.uk/api-keys
+  apiKey: 'osk_tu-api-key' // Obténla en https://optishield.uk/api-keys
 })
 
-// Descargar video de YouTube (MP4)
 const video = await api.youtube('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'mp4')
 console.log('Título:', video.result?.title)
-console.log('URL:', video.result?.downloadUrl)
 ```
 
-## Métodos
+---
 
-### 📹 YouTube
+## 📋 APIs disponibles (32 scrapers)
+
+### 🎵 Descargadores
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `youtubedl` | `api.youtube(url, format?)` | YouTube DL — Videos + Shorts. `video=1` → MP4 480p, `video=0` → MP3 |
+| `tiktokdl` | `api.tiktok(url)` | Descarga videos o carruseles de TikTok sin marca de agua |
+| `spotifydl` | `api.spotifyDownload(url)` | Descarga audio de Spotify con portada y letras incrustadas |
+| `soundcloud-dl` | `api.executeScraper('soundcloud-dl', { url })` | Descarga canciones de SoundCloud con metadatos ID3 |
+| `bandcamp-dl` | `api.executeScraper('bandcamp-dl', { url })` | Descarga canciones gratuitas de Bandcamp |
+| `apple-music-dl` | `api.executeScraper('apple-music-dl', { url })` | Preview 30s de Apple Music |
+| `instagram-search` → `instashadow` | `api.instagram(url)` | Descarga reels, posts, stories y perfiles de Instagram |
+| `facebookdl` | `api.facebook(url)` | Descarga videos/audio de Facebook hasta 720p |
+| `twitterdl` | `api.executeScraper('twitterdl', { url })` | Descarga videos, GIFs e imágenes de tweets |
+| `redditdl` | `api.executeScraper('redditdl', { url })` | Descarga videos, GIFs e imágenes de Reddit |
+| `pinterestdl` | `api.executeScraper('pinterestdl', { url })` | Descarga imágenes o videos de Pinterest |
+| `mediafiredl` | `api.executeScraper('mediafiredl', { url })` | Obtiene enlace de descarga de MediaFire |
+
+### 🔍 Buscadores
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `youtube-search` | `api.youtubeSearch(query)` | Busca videos en YouTube (rápido, HTML, sin yt-dlp) |
+| `ytsearch` | `api.executeScraper('ytsearch', { query })` | Busca videos en YouTube por palabra clave |
+| `tiktoksearch` | `api.executeScraper('tiktoksearch', { query })` | Busca videos en TikTok con links HD |
+| `spotifySearch` | `api.spotifySearch(query)` | Busca tracks en Spotify |
+| `soundcloud-search` | `api.executeScraper('soundcloud-search', { query })` | Busca canciones en SoundCloud v2 API |
+| `bandcamp-search` | `api.executeScraper('bandcamp-search', { q })` | Busca música en Bandcamp |
+| `apple-music-search` | `api.executeScraper('apple-music-search', { query })` | Busca en Apple Music vía iTunes API |
+| `reddit-search` | `api.executeScraper('reddit-search', { q })` | Busca posts en Reddit por subreddit o query |
+| `facebook-search` | `api.executeScraper('facebook-search', { query })` | Busca posts públicos de Facebook vía Google |
+| `pinterestSearch` | `api.executeScraper('pinterestSearch', { query })` | Búsqueda de imágenes en Pinterest |
+
+### 🛠️ Herramientas & Scrapers
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `iplocation` | `api.executeScraperSync('iplocation', { ip })` | Geolocalización de IP (país, región, ISP, ASN) |
+| `domaininfo` | `api.executeScraper('domaininfo', { dominio })` | DNS, IP, MX, NS, SSL y geo de un dominio |
+| `heckai` | `api.executeScraper('heckai', { prompt })` | Chat con IA (GPT-5.4-mini), sesiones conversacionales |
+
+### 🎨 Fun & Imágenes
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `brat` | `api.executeScraper('brat', { text })` | Genera imagen BRAT (texto negro sobre blanco) |
+| `brat-video` | `api.executeScraper('brat-video', { text })` | Video animado tipo BRAT |
+| `bounty` | `api.executeScraper('bounty', { imagen, texto })` | Cartel de recompensa estilo bucanero |
+| `fakeiqc` | `api.executeScraper('fakeiqc', { media })` | Imagen con marco redondeado decorativo |
+| `fakenote` | `api.executeScraper('fakenote', { texto, avatar, nombre })` | Nota/fake de WhatsApp |
+| `fakepost` | `api.executeScraper('fakepost', { avatar, usuario, media })` | Post falso de Instagram/Facebook |
+
+---
+
+## ⚡ Ejemplos con respuestas reales
+
+### YouTube Search
 
 ```ts
-// Descargar video MP4
-const video = await api.youtube('https://youtube.com/watch?v=...', 'mp4')
-
-// Descargar solo audio MP3
-const audio = await api.youtube('https://youtube.com/watch?v=...', 'mp3')
-
-// Buscar videos en YouTube
-const results = await api.youtubeSearch('música relajante')
-console.log(results.result?.videos)
+const result = await api.youtubeSearch('música')
+console.log(JSON.stringify(result, null, 2))
 ```
 
-### 🎵 TikTok
+<details>
+<summary>📖 Respuesta real</summary>
+
+```json
+{
+  "scraper": "youtube-search",
+  "result": {
+    "success": true,
+    "data": [
+      {
+        "id": "ocCZPaskASo",
+        "title": "Musica para trabajar activo y alegre - Deep House Mix 2026 #95",
+        "url": "https://youtube.com/watch?v=ocCZPaskASo",
+        "duration": 13317,
+        "durationFormatted": "3:41:57",
+        "channel": "Deep Inovation",
+        "thumbnail": "https://i.ytimg.com/vi/ocCZPaskASo/hqdefault.jpg",
+        "views": 3531,
+        "viewsFormatted": "3.5K"
+      }
+    ],
+    "query": "música",
+    "total": 10
+  },
+  "usage": { "used": 911, "max": 100000, "remaining": 99089 },
+  "timestamp": "2026-07-27T20:23:47.187Z"
+}
+```
+</details>
+
+### IP Location
 
 ```ts
-// Descargar video TikTok (sin marca de agua)
-const tiktok = await api.tiktok('https://vt.tiktok.com/ZSX...')
-console.log('Video:', tiktok.result?.videoUrl)
-console.log('Música:', tiktok.result?.musicUrl)
+const result = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
+console.log(JSON.stringify(result, null, 2))
 ```
 
-### 📸 Instagram
+<details>
+<summary>📖 Respuesta real</summary>
+
+```json
+{
+  "scraper": "iplocation",
+  "result": {
+    "success": true,
+    "ip": "8.8.8.8",
+    "hostname": null,
+    "ubicacion": {
+      "pais": "United States",
+      "codigo_pais": "US",
+      "region": "California",
+      "ciudad": "Mountain View",
+      "coordenadas": { "latitud": "37.4220", "longitud": "-122.0850" }
+    },
+    "red": {
+      "isp": "Google LLC",
+      "asn": "AS15169",
+      "red": "AS15169 Google LLC (VPN, CDN, VPSH, ICRIT, ANYCAST, CONTENT)",
+      "tipo_uso": "Corporate / Hosting"
+    },
+    "hora": {
+      "zona_horaria": "America/Los_Angeles (PDT)",
+      "hora_local": "Mon, 27 Jul 2026 13:23:51 -0700"
+    }
+  },
+  "usage": { "used": 912, "max": 100000, "remaining": 99088 },
+  "timestamp": "2026-07-27T20:23:51.460Z"
+}
+```
+</details>
+
+### Ping & Health
 
 ```ts
-// Descargar video/imagen de Instagram
-const insta = await api.instagram('https://instagram.com/p/...')
-console.log('Descargas:', insta.result?.downloadUrls)
+const pong = await api.ping()
+console.log(pong)
+// { "ok": true, "latency": 130 }
 ```
 
-### 📘 Facebook
+### Versión del servidor
 
 ```ts
-// Descargar video de Facebook
-const fb = await api.facebook('https://facebook.com/watch?v=...')
-console.log('Video HD:', fb.result?.hdUrl)
-console.log('Video SD:', fb.result?.sdUrl)
+const v = await api.version()
+console.log(v)
+// { "version": "1.0.0", "buildTime": "2026-07-27T19:51:00.596Z", "uptime": 1968.9 }
 ```
 
-### 🎧 Spotify
+### Estadísticas de uso
 
 ```ts
-// Buscar canciones
-const search = await api.spotifySearch('bad bunny último hit')
-console.log('Resultados:', search.result?.tracks)
-
-// Descargar canción por URL
-const song = await api.spotifyDownload('https://open.spotify.com/track/...')
-console.log('Canción:', song.result?.title)
-console.log('Descarga:', song.result?.downloadUrl)
+const usage = await api.getUsage(7)
+console.log(`Total: ${usage.totalCalls} llamadas en ${usage.periodDays} días`)
+usage.byScraper.forEach(s => console.log(`  • ${s.scraper}: ${s.calls}`))
 ```
 
-### 💾 Descarga directa de archivos
+<details>
+<summary>📖 Respuesta real</summary>
 
-Descarga cualquier archivo desde una URL externa usando el proxy de OptiShield (evita problemas de CORS):
+```json
+{
+  "periodDays": 7,
+  "totalCalls": 613,
+  "byScraper": [
+    { "scraper": "youtubedl", "calls": 274 },
+    { "scraper": "ytsearch", "calls": 218 },
+    { "scraper": "tiktokdl", "calls": 33 },
+    { "scraper": "youtube-search", "calls": 31 },
+    { "scraper": "tiktoksearch", "calls": 13 },
+    { "scraper": "iplocation", "calls": 9 }
+  ]
+}
+```
+</details>
+
+### Listar todos los scrapers
 
 ```ts
-import fs from 'fs'
-
-// Descargar archivo como Buffer
-const file = await api.downloadFile('https://ejemplo.com/video.mp4')
-fs.writeFileSync('video.mp4', file.buffer)
-console.log('Archivo:', file.filename, `(${file.size} bytes)`)
-
-// Con nombre personalizado y timeout extendido
-const file2 = await api.downloadFile('https://ejemplo.com/archivo-grande.mp4', {
-  filename: 'mi-video.mp4',
-  timeout: 120_000
-})
-
-// Guardar directamente en disco
-const savedPath = await api.downloadToDisk(
-  'https://ejemplo.com/imagen.jpg',
-  './descargas/foto.jpg'
-)
-console.log('Guardado en:', savedPath)
+const scrapers = await api.listScrapers()
+console.log(`📦 ${scrapers.total} scrapers disponibles`)
+scrapers.scrapers.forEach(s => console.log(`  • ${s.name}: ${s.description || 'Sin descripción'}`))
 ```
 
-### 📤 Subida de archivos
+---
 
-Sube archivos al cluster de OptiShield (almacenados en Windows D://tmp) con expiración automática:
+## 📤 Subida de archivos
+
+Sube archivos al cluster con expiración automática:
 
 ```ts
 import fs from 'fs'
 
 const buffer = fs.readFileSync('./documento.pdf')
 
-// Subir con expiración default de 3 días
+// Subir (expira en 3 días por defecto)
 const upload = await api.uploadFile(buffer, 'documento.pdf', 'application/pdf')
-console.log('URL pública:', upload.url)       // https://optishield.uk/upload/abc123...
-console.log('Expira:', upload.expiresAt)      // ISO date
+console.log('URL:', upload.url)
+console.log('Expira:', upload.expiresAt)
 
 // Subir con expiración personalizada (7 días)
 const upload7d = await api.uploadFile(buffer, 'video.mp4', 'video/mp4', {
   expiresInDays: 7
 })
 
-// Descargar archivo subido previamente
+// Descargar archivo subido
 const downloaded = await api.downloadUpload(upload.url)
-fs.writeFileSync('copia.pdf', downloaded.buffer)
 ```
 
-### 🔗 Acortar URLs
+---
+
+## 💾 Descarga directa (proxy anti-CORS)
+
+```ts
+import fs from 'fs'
+
+// Descargar como Buffer
+const file = await api.downloadFile('https://ejemplo.com/video.mp4')
+fs.writeFileSync('video.mp4', file.buffer)
+console.log(`Guardado: ${file.filename} (${file.size} bytes)`)
+
+// Guardar directamente en disco
+await api.downloadToDisk('https://ejemplo.com/imagen.jpg', './descargas/foto.jpg')
+```
+
+---
+
+## 🔗 Acortar URLs
 
 ```ts
 const short = await api.shortenUrl('https://ejemplo.com/articulo-muy-largo')
-console.log('URL corta:', short.shortUrl) // https://optishield.uk/r/aB3xK9
+console.log('URL corta:', short.shortUrl)  // https://optishield.uk/r/aB3xK9
 console.log('Código:', short.code)
 ```
 
-### 🤖 Scrapers personalizados
+---
+
+## 🤖 Scrapers personalizados
 
 ```ts
-// Ejecutar scraper con worker + polling (recomendado para procesos largos)
+// Worker + polling (para procesos largos)
 const result = await api.executeScraper('tiktok', {
   url: 'https://vt.tiktok.com/ZSX...'
-})
-console.log('Resultado:', result.result)
-
-// Ejecutar scraper síncrono (para procesos rápidos)
-const result2 = await api.executeScraperSync('ip-locate', {
-  ip: '8.8.8.8'
+}, {
+  maxRetries: 30,  // 30 intentos
+  interval: 3000    // cada 3 segundos
 })
 
-// Configurar polling personalizado
-const result3 = await api.executeScraper('youtube', 
-  { url: 'https://youtube.com/watch?v=...', format: 'mp4' },
-  { maxRetries: 30, interval: 3000 } // 30 intentos cada 3 segundos
-)
-
-// Listar todos los scrapers disponibles
-const scrapers = await api.listScrapers()
-console.log(`📦 ${scrapers.total} scrapers disponibles`)
-scrapers.scrapers.forEach(s => console.log(`  • ${s.name}: ${s.description}`))
+// Scraper síncrono (rápido)
+const ipInfo = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
 ```
 
-### 📊 Estadísticas de uso
+---
 
-```ts
-// Uso de los últimos 7 días
-const usage = await api.getUsage(7)
-console.log(`Llamadas totales: ${usage.totalCalls}`)
-console.log(`Requests usados: ${usage.totalRows}`)
-usage.byScraper.forEach(s => {
-  console.log(`  • ${s.scraper}: ${s.calls} llamadas`)
-})
-
-// Ping al servidor
-const pong = await api.ping()
-console.log(`Latencia: ${pong.latency}ms`)
-
-// Versión del servidor
-const version = await api.version()
-console.log(`Versión: ${version.version}`)
-console.log(`Build: ${version.buildTime}`)
-console.log(`Uptime: ${Math.round(version.uptime / 3600)}h`)
-```
-
-## Ejemplos completos
-
-### Ejemplo 1: Descargar y guardar video de YouTube
-
-```ts
-import { OptiShieldClient } from 'optishield-api'
-import fs from 'fs'
-
-const api = new OptiShieldClient({ apiKey: process.env.OPTISHIELD_API_KEY })
-
-async function descargarVideo(url: string) {
-  console.log('⏳ Procesando...')
-  
-  // 1. Obtener info del video
-  const info = await api.youtube(url, 'mp4')
-  const downloadUrl = info.result?.downloadUrl || info.result?.url
-  console.log('✅ Video:', info.result?.title)
-  
-  if (!downloadUrl) throw new Error('No hay URL de descarga')
-  
-  // 2. Descargar el archivo
-  console.log('⏳ Descargando archivo...')
-  const file = await api.downloadFile(downloadUrl, {
-    filename: `${info.result?.title || 'video'}.mp4`,
-    timeout: 180_000
-  })
-  
-  // 3. Guardar en disco
-  const outputPath = `./descargas/${file.filename}`
-  fs.writeFileSync(outputPath, file.buffer)
-  console.log(`✅ Guardado: ${outputPath} (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
-}
-
-descargarVideo('https://www.youtube.com/watch?v=UtxBDhuVdW0').catch(console.error)
-```
-
-### Ejemplo 2: Subir archivo, acortar URL y compartir
-
-```ts
-import { OptiShieldClient } from 'optishield-api'
-import fs from 'fs'
-
-const api = new OptiShieldClient({ apiKey: process.env.OPTISHIELD_API_KEY })
-
-async function compartirArchivo(filePath: string) {
-  // 1. Leer archivo
-  const buffer = fs.readFileSync(filePath)
-  const name = filePath.split('/').pop() || 'archivo'
-  
-  // 2. Subir con expiración de 7 días
-  const upload = await api.uploadFile(buffer, name, 'application/octet-stream', {
-    expiresInDays: 7
-  })
-  console.log('📤 Subido:', upload.url)
-  console.log('⏰ Expira:', upload.expiresAt)
-  
-  // 3. Acortar la URL
-  const short = await api.shortenUrl(upload.url)
-  console.log('🔗 Link corto:', short.shortUrl)
-  
-  return { upload, short }
-}
-
-compartirArchivo('./presentacion.pdf').catch(console.error)
-```
-
-### Ejemplo 3: Buscar y descargar canción de Spotify
-
-```ts
-import { OptiShieldClient } from 'optishield-api'
-
-const api = new OptiShieldClient({ apiKey: process.env.OPTISHIELD_API_KEY })
-
-async function descargarCancion(query: string) {
-  // 1. Buscar
-  const search = await api.spotifySearch(query)
-  const track = search.result?.tracks?.[0]
-  if (!track) throw new Error('No se encontró la canción')
-  console.log('🎵 Canción:', track.title, '-', track.artist)
-  
-  // 2. Descargar
-  const song = await api.spotifyDownload(track.url)
-  console.log('✅ Audio:', song.result?.downloadUrl)
-  return song
-}
-
-descargarCancion('Dua Lipa Dance The Night').catch(console.error)
-```
-
-### Ejemplo 4: Verificar estado y uso de la API
-
-```ts
-import { OptiShieldClient } from 'optishield-api'
-
-const api = new OptiShieldClient({ apiKey: process.env.OPTISHIELD_API_KEY })
-
-async function dashboard() {
-  const [version, usage, scrapers, ping] = await Promise.all([
-    api.version(),
-    api.getUsage(30),
-    api.listScrapers(),
-    api.ping()
-  ])
-  
-  console.log(`
-╔══════════════════════════╗
-║   OptiShield Dashboard   ║
-╠══════════════════════════╣
-║ Versión: ${version.version.padEnd(17)}║
-║ Build:   ${new Date(version.buildTime).toLocaleDateString().padEnd(17)}║
-║ Latencia: ${String(ping.latency).padEnd(3)}ms${' '.repeat(12)}║
-║ Uptime:  ${Math.round(version.uptime / 3600)}h${' '.repeat(14)}║
-║ Scrapers: ${String(scrapers.total).padEnd(3)} disponibles${' '.repeat(5)}║
-║ Requests: ${String(usage.totalCalls).padEnd(4)} en 30 días${' '.repeat(5)}║
-╚══════════════════════════╝
-  `)
-}
-
-dashboard().catch(console.error)
-```
-
-## API Reference
-
-### `OptiShieldClient`
+## 📚 Referencia completa de métodos
 
 | Método | Descripción |
 |--------|-------------|
-| `youtube(url, format?)` | Descarga video/audio de YouTube |
+| `youtube(url, format?)` | Descarga video/audio de YouTube (mp4/mp3) |
 | `youtubeSearch(query)` | Busca videos en YouTube |
-| `tiktok(url)` | Descarga video de TikTok |
-| `instagram(url)` | Descarga contenido de Instagram |
-| `facebook(url)` | Descarga video de Facebook |
+| `tiktok(url)` | Descarga video de TikTok sin marca de agua |
 | `spotifySearch(query)` | Busca canciones en Spotify |
 | `spotifyDownload(url)` | Descarga canción de Spotify |
+| `instagram(url)` | Descarga contenido de Instagram |
+| `facebook(url)` | Descarga video de Facebook |
 | `executeScraper(name, params, pollOpts?)` | Ejecuta scraper con worker + polling |
 | `executeScraperSync(name, params)` | Ejecuta scraper síncrono |
-| `uploadFile(buffer, name, mime, opts?)` | Sube archivo con expiración |
+| `uploadFile(buffer, name, mime, opts?)` | Sube archivo con expiración configurable |
 | `downloadUpload(uploadUrl)` | Descarga archivo subido previamente |
-| `downloadFile(url, opts?)` | Descarga archivo desde URL externa (proxy) |
-| `downloadToDisk(url, outputPath, opts?)` | Descarga y guarda en disco |
-| `shortenUrl(url)` | Acorta una URL |
+| `downloadFile(url, opts?)` | Descarga archivo desde URL externa (proxy anti-CORS) |
+| `downloadToDisk(url, outputPath, opts?)` | Descarga y guarda directamente en disco |
+| `shortenUrl(url)` | Acorta URLs |
 | `listScrapers()` | Lista scrapers disponibles |
-| `getScraperInfo(name)` | Información de un scraper |
-| `getUsage(days?)` | Estadísticas de uso |
+| `getScraperInfo(name)` | Información detallada de un scraper |
+| `getUsage(days?)` | Estadísticas de uso de la API |
 | `ping()` | Verifica conexión con el servidor |
 | `version()` | Información de versión del servidor |
+| `login(pollInterval?, timeout?)` | Inicia sesión por dispositivo (recomendado) |
+| `logout()` | Cierra sesión y elimina credenciales guardadas |
+| `isLoggedIn()` | Verifica si hay sesión activa |
 
-## TypeScript
+---
+
+## ⚠️ Errores comunes
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `Se requiere apiKey` | No proporcionaste apiKey ni hiciste login | Usa `api.login()` o pasa apiKey en el constructor |
+| `NO_ACTIVE_PLAN` | API key sin permisos o plan inactivo | Verifica tu plan en https://optishield.uk/store |
+| `Archivo muy grande` | Archivo excede 100MB | Comprime o divide el archivo |
+| `Límite de solicitudes` | Alcanzaste tu cuota mensual | Mejora tu plan o espera al próximo mes |
+| `Timeout: worker no completó` | El scraper tomó demasiado tiempo | Aumenta `maxRetries` o `interval` en executeScraper |
+| `El archivo ha expirado` | El upload alcanzó su fecha de expiración | Vuelve a subir el archivo |
+| `Código expirado` | El código de autenticación por dispositivo expiró | Vuelve a ejecutar `api.login()` |
+
+---
+
+## 📦 TypeScript
 
 El módulo incluye tipos completos:
 
 ```ts
-import { 
+import {
   OptiShieldClient,
   OptiShieldOptions,
   UploadResult,
@@ -395,23 +401,16 @@ const opts: OptiShieldOptions = { apiKey: '...' }
 const api = new OptiShieldClient(opts)
 ```
 
-## Errores comunes
+---
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `Se requiere apiKey` | No pasaste apiKey | Obtén una en [api-keys](https://optishield.uk/api-keys) |
-| `API key sin permisos` | Key revocada o plan inactivo | Verifica tu plan en el dashboard |
-| `Archivo muy grande` | Archivo > 100MB | Comprime o divide el archivo |
-| `Límite de solicitudes` | Alcanzaste tu cuota mensual | Mejora tu plan o espera al próximo mes |
-| `Timeout: worker no completó` | El scraper tomó demasiado | Aumenta `maxRetries` o `interval` |
-| `El archivo ha expirado` | El upload expiró | Vuelve a subir el archivo |
-
-## Requisitos
+## 📋 Requisitos
 
 - Node.js >= 18
-- API key de OptiShield ([https://optishield.uk/api-keys](https://optishield.uk/api-keys))
-- Plan activo
+- API key de OptiShield o cuenta en https://optishield.uk/
+- Plan activo (Pro o superior para descargas)
 
-## Licencia
+---
 
-MIT
+## 📄 Licencia
+
+MIT © OptiShield — [https://optishield.uk/](https://optishield.uk/)
