@@ -1,0 +1,55 @@
+{
+  "name": "optishield-api",
+  "version": "1.0.0",
+  "description": "Cliente oficial para la API de OptiShield. Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y más. Incluye sistema de workers con polling y subida de archivos con expiración.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "optishield",
+    "youtube-downloader",
+    "tiktok-downloader",
+    "instagram-downloader",
+    "facebook-downloader",
+    "spotify-downloader",
+    "scraper",
+    "whatsapp-bot",
+    "file-upload",
+    "worker-pooling"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/optishield/optishield-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/optishield/optishield-api/issues"
+  },
+  "homepage": "https://optishield.uk/",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "form-data": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
