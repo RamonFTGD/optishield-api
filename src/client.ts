@@ -13,6 +13,9 @@ import type {
   DeviceAuthResponse,
   DeviceAuthPollResponse,
   DeviceCredentials,
+  MessageDashboard,
+  AllMessageDashboards,
+  RecoveryMetricsData,
 } from './types.js'
 import fs from 'fs'
 import path from 'path'
@@ -558,7 +561,7 @@ export class OptiShieldClient {
       params,
       {
         params: { async: '0' },
-        timeout: 180_000, // 3 minutos (coincide con timeout del servidor)
+        timeout: 5400_000, // 3 minutos (coincide con timeout del servidor)
       }
     )
     return res.data as ScraperResult
@@ -968,6 +971,73 @@ export class OptiShieldClient {
    */
   clearCredentials(): void {
     this.logout()
+  }
+
+  // ═══════════════════════════════════════════
+  //  MESSAGE DASHBOARD & RECOVERY METRICS
+  // ═══════════════════════════════════════════
+
+  /**
+   * Obtiene el dashboard de mensajes para un bot específico.
+   * Incluye estado de recuperación, métricas, y mensajes recientes.
+   *
+   * @param botId - ID del bot
+   * @returns Dashboard completo con métricas de recuperación
+   *
+   * @example
+   * ```ts
+   * const dashboard = await api.getMessageDashboard('bot-id-123')
+   * console.log('Recovery success rate:', dashboard.recoveryMetrics.successRate + '%')
+   * console.log('Avg processing time:', dashboard.recoveryMetrics.avgProcessingTimeMs + 'ms')
+   * ```
+   */
+  async getMessageDashboard(botId: string): Promise<MessageDashboard> {
+    await this.ensureAuth()
+    const res = await this.client.get(`/bots/${botId}/message-dashboard`)
+    return res.data as MessageDashboard
+  }
+
+  /**
+   * Obtiene el dashboard de mensajes para TODOS los bots del usuario.
+   *
+   * @returns Lista de dashboards con métricas de cada bot
+   *
+   * @example
+   * ```ts
+   * const allDashboards = await api.getAllMessageDashboards()
+   * for (const dashboard of allDashboards.bots) {
+   *   console.log(`${dashboard.bot.name}: ${dashboard.recoveryMetrics.successRate}% success`)
+   * }
+   * ```
+   */
+  async getAllMessageDashboards(): Promise<AllMessageDashboards> {
+    await this.ensureAuth()
+    const res = await this.client.get('/bots/message-dashboard/all')
+    return res.data as AllMessageDashboards
+  }
+
+  /**
+   * Resetea el tracking de mensajes para un bot.
+   * Útil para debugging o después de una actualización.
+   *
+   * @param botId - ID del bot
+   * @returns Confirmación del reset
+   */
+  async resetMessageTracking(botId: string): Promise<{ success: boolean; message: string }> {
+    await this.ensureAuth()
+    const res = await this.client.post(`/bots/${botId}/reset-message-tracking`)
+    return res.data as { success: boolean; message: string }
+  }
+
+  /**
+   * Obtiene métricas de recuperación para un bot específico.
+   *
+   * @param botId - ID del bot
+   * @returns Métricas de recuperación detalladas
+   */
+  async getRecoveryMetrics(botId: string): Promise<RecoveryMetricsData> {
+    const dashboard = await this.getMessageDashboard(botId)
+    return dashboard.recoveryMetrics
   }
 }
 

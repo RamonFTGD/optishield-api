@@ -137,3 +137,104 @@ export interface DeviceCredentials {
   /** URL base del servidor */
   baseUrl?: string
 }
+
+// ═══════════════════════════════════════════
+//  MESSAGE DASHBOARD TYPES
+// ═══════════════════════════════════════════
+
+export interface MessageDashboard {
+  bot: {
+    id: string
+    name: string
+    status: string
+    isConnected: boolean
+  }
+  recovery: {
+    isRecovering: boolean
+    pendingMessages: number
+    disconnectTime: number
+    lastDisconnectAgo: number | null
+  }
+  queue: {
+    total: number
+    high: number
+    low: number
+    active: number
+  }
+  messageTracking: {
+    processedCount: number
+    maxCapacity: number
+    usagePercent: number
+  }
+  recoveryMetrics: RecoveryMetricsData
+  recentMessages: Array<{
+    id: string
+    jid: string
+    keyId: string
+    content: string
+    type: string
+    timestamp: number
+    pushName: string
+    isGroup: boolean
+    processed: boolean
+    timeAgo: string
+  }>
+  timestamp: string
+}
+
+export interface RecoveryMetricsData {
+  totalRecoveries: number
+  successfulRecoveries: number
+  failedRecoveries: number
+  successRate: number
+  avgProcessingTimeMs: number
+  totalMessagesProcessed: number
+  lastRecovery: {
+    timestamp: number
+    durationMs: number
+    messagesProcessed: number
+    success: boolean
+    timeAgo: number
+  } | null
+  history: Array<{
+    timestamp: number
+    durationMs: number
+    messagesProcessed: number
+    success: boolean
+    disconnectDurationMs: number
+  }>
+}
+
+export interface AllMessageDashboards {
+  bots: Array<{
+    bot: {
+      id: string
+      name: string
+      status: string
+      isConnected: boolean
+    }
+    recovery: {
+      isRecovering: boolean
+      pendingMessages: number
+    }
+    queue: {
+      total: number
+      high: number
+      low: number
+      active: number
+    }
+    messageTracking: {
+      processedCount: number
+      maxCapacity: number
+      usagePercent: number
+    }
+    recoveryMetrics: {
+      totalRecoveries: number
+      successfulRecoveries: number
+      failedRecoveries: number
+      successRate: number
+      avgProcessingTimeMs: number
+    }
+  }>
+  timestamp: string
+}

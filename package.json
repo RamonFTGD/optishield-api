@@ -1,7 +1,7 @@
 {
   "name": "optishield-api",
-  "version": "1.0.0",
-  "description": "Cliente oficial para la API de OptiShield. Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y más. Incluye sistema de workers con polling y subida de archivos con expiración.",
+  "version": "1.1.0",
+  "description": "Cliente oficial para la API de OptiShield. Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y m\u00e1s. Incluye sistema de workers con polling y subida de archivos con expiraci\u00f3n.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
