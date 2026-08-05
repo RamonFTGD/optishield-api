@@ -686,42 +686,267 @@ export class OptiShieldClient {
   }
 
   // ═══════════════════════════════════════════
-  //  HELPERS PARA SCRAPERS COMUNES
+  //  MÉTODO UNIVERSAL PARA CUALQUIER SCRAPER
   // ═══════════════════════════════════════════
 
-  /** Descarga video/audio de YouTube */
-  async youtube(url: string, format: 'mp4' | 'mp3' = 'mp4') {
-    return this.executeScraper('youtube', { url, format })
+  /**
+   * Ejecuta CUALQUIER scraper de la API por su nombre, sin importar si
+   * tiene helper dedicado o no. Este es el método universal.
+   *
+   * @param name - Nombre exacto del scraper (ver `listScrapers()`)
+   * @param params - Parámetros del scraper
+   * @param opts - Opciones (sync=false usa workers/polling, sync=true espera directo)
+   * @returns Resultado del scraper
+   *
+   * @example
+   * ```ts
+   * // IA unificada
+   * await api.scraper('ia', { prompt: 'Hola' })
+   * // IA individual
+   * await api.scraper('nova-ai', { prompt: 'Hola' })
+   * // Descargar video de TikTok
+   * await api.scraper('tiktokdl', { url: 'https://tiktok.com/@user/video/123' })
+   * ```
+   */
+  async scraper(
+    name: string,
+    params: Record<string, any> = {},
+    opts?: { sync?: boolean }
+  ): Promise<ScraperResult> {
+    const sync = opts?.sync ?? true
+    return sync
+      ? this.executeScraperSync(name, params)
+      : this.executeScraper(name, params)
   }
 
-  /** Descarga video de TikTok */
+  /** Alias de `scraper(name, params)` para máximo descubrimiento. */
+  async callScraper(
+    name: string,
+    params: Record<string, any> = {},
+    opts?: { sync?: boolean }
+  ): Promise<ScraperResult> {
+    return this.scraper(name, params, opts)
+  }
+
+  // ═══════════════════════════════════════════
+  //  HELPERS TIPADOS — TODOS LOS SCRAPERS
+  // ═══════════════════════════════════════════
+
+  // ─────────── IA (individuales + orquestador) ───────────
+
+  /** 🤖 Chat con IA unificado (orquestador: prueba nova-ai → heckai → gptanon → google-gemma) */
+  async ia(prompt: string, sessionId?: string) {
+    return this.scraper('ia', { prompt, sessionId: sessionId || undefined })
+  }
+
+  /** 🤖 Chat con Nova AI (rápido y gratuito) */
+  async novaAI(prompt: string) {
+    return this.scraper('nova-ai', { prompt })
+  }
+
+  /** 🤖 Chat con HeckAI (GPT-5.4-mini, con sesiones conversacionales) */
+  async heckAI(prompt: string, sessionId?: string) {
+    return this.scraper('heckai', { prompt, sessionId: sessionId || undefined })
+  }
+
+  /** 🤖 Chat con GPTAnon (Google Gemma-3-27b, con sesiones y modelos) */
+  async gptAnon(prompt: string, sessionId?: string, model?: string) {
+    return this.scraper('gptanon', {
+      prompt,
+      sessionId: sessionId || undefined,
+      model: model || undefined,
+    })
+  }
+
+  /** 🤖 Chat con Google Gemma AI (con sesiones conversacionales) */
+  async googleGemma(prompt: string, sessionId?: string) {
+    return this.scraper('google-gemma', {
+      prompt,
+      sessionId: sessionId || undefined,
+    })
+  }
+
+  /** 🤖 Edita una imagen con IA a partir de un prompt */
+  async photoEditorAI(image: string, prompt: string) {
+    return this.scraper('photoeditorai', { image, prompt })
+  }
+
+  // ─────────── Descargadores ───────────
+
+  /** ⬇️ Descarga video/audio de YouTube — video=0 → MP3, video=1 → MP4 480p */
+  async youtubeDownload(url: string, video: number | 'mp3' | 'mp4' = 1) {
+    const videoFlag =
+      video === 'mp3' ? 0 : video === 'mp4' ? 1 : Number(video)
+    return this.scraper('youtubedl', { url, video: videoFlag })
+  }
+
+  /** ⬇️ Alias de `youtubeDownload(url, video)` */
+  async youtube(url: string, video: number | 'mp3' | 'mp4' = 1) {
+    return this.youtubeDownload(url, video)
+  }
+
+  /** ⬇️ Descarga videos o carruseles de TikTok sin marca de agua */
+  async tiktokDownload(url: string, opts?: { format?: string; query?: string }) {
+    return this.scraper('tiktokdl', { url, ...opts })
+  }
+
+  /** ⬇️ Alias de `tiktokDownload(url, opts)` */
   async tiktok(url: string) {
-    return this.executeScraper('tiktok', { url })
+    return this.tiktokDownload(url)
   }
 
-  /** Descarga video de Instagram */
+  /** ⬇️ Descarga reels, posts y carruseles de Instagram */
+  async instagramDownload(url: string) {
+    return this.scraper('igdl', { url })
+  }
+
+  /** ⬇️ Alias de `instagramDownload(url)` */
   async instagram(url: string) {
-    return this.executeScraper('instagram', { url })
+    return this.instagramDownload(url)
   }
 
-  /** Descarga video de Facebook */
-  async facebook(url: string) {
-    return this.executeScraper('facebook', { url })
+  /** ⬇️ Descarga video o audio de Facebook */
+  async facebookDownload(url: string, format?: string) {
+    return this.scraper('facebookdl', { url, format: format || undefined })
   }
 
-  /** Busca canciones en Spotify */
-  async spotifySearch(query: string) {
-    return this.executeScraper('spotify', { query, action: 'search' })
+  /** ⬇️ Alias de `facebookDownload(url, format)` */
+  async facebook(url: string, format?: string) {
+    return this.facebookDownload(url, format)
   }
 
-  /** Descarga canción de Spotify */
+  /** ⬇️ Descarga audio de Spotify con portada y letras incrustadas */
   async spotifyDownload(url: string) {
-    return this.executeScraper('spotify', { url, action: 'download' })
+    return this.scraper('spotifydl', { url })
   }
 
-  /** Busca videos en YouTube */
-  async youtubeSearch(query: string) {
-    return this.executeScraper('youtube-search', { query })
+  /** ⬇️ Descarga imágenes o videos de Pinterest */
+  async pinterestDownload(url: string) {
+    return this.scraper('pinterestdl', { url })
+  }
+
+  /** ⬇️ Link directo de descarga de un mod de Minecraft (Modrinth) */
+  async mcmodsDownload(
+    slug: string,
+    opts?: { version?: string; loader?: string; versionId?: string; limit?: number }
+  ) {
+    return this.scraper('mcmods-dl', { slug, ...opts })
+  }
+
+  // ─────────── Buscadores ───────────
+
+  /** 🔎 Busca videos en YouTube */
+  async youtubeSearch(query: string, maxResults?: number) {
+    return this.scraper('ytsearch', { query, maxResults: maxResults || undefined })
+  }
+
+  /** 🔎 Busca canciones en Spotify */
+  async spotifySearch(query: string, limit?: number) {
+    return this.scraper('spotify-search', { query, limit: limit || undefined })
+  }
+
+  /** 🔎 Busca videos en TikTok con links de descarga HD */
+  async tiktokSearch(query: string, count?: number) {
+    return this.scraper('tiktoksearch', { query, count: count || undefined })
+  }
+
+  /** 🔎 Busca posts y videos públicos de Facebook */
+  async facebookSearch(query: string, limit?: number) {
+    return this.scraper('facebook-search', { query, limit: limit || undefined })
+  }
+
+  /** 🔎 Busca imágenes en Pinterest */
+  async pinterestSearch(query: string, limit?: number) {
+    return this.scraper('pinterestSearch', { query, limit: limit || undefined })
+  }
+
+  /** 🔎 Busca letras de canciones en Lyrics.com */
+  async lyricsSearch(query: string) {
+    return this.scraper('lyrics-search', { query })
+  }
+
+  /** 🔎 Busca mods de Minecraft Java en Modrinth */
+  async mcmodsSearch(
+    q: string,
+    opts?: { version?: string; loader?: string; limit?: number; index?: number; sort?: string }
+  ) {
+    return this.scraper('mcmods-search', { q, ...opts })
+  }
+
+  // ─────────── Scrapers ───────────
+
+  /** 🔍 Información de un canal de YouTube (stalker) */
+  async stalkYt(username: string) {
+    return this.scraper('stalkyt', { username })
+  }
+
+  /** 🔍 Información de un perfil de TikTok */
+  async tiktokStalk(username: string) {
+    return this.scraper('tiktokstalk', { username })
+  }
+
+  /** 🔍 Nombre, descripción e imagen de un canal de WhatsApp */
+  async waChannel(url: string) {
+    return this.scraper('wachannel', { url })
+  }
+
+  /** 🔍 Traduce texto a cualquier idioma */
+  async traductor(texto: string, idioma: string) {
+    return this.scraper('traductor', { texto, idioma })
+  }
+
+  /** 🔍 Clima actual de una ciudad */
+  async clima(ciudad: string) {
+    return this.scraper('clima', { ciudad })
+  }
+
+  /** 🔍 Geolocalización de una dirección IP */
+  async ipLocation(ip: string) {
+    return this.scraper('iplocation', { ip })
+  }
+
+  /** 🔍 Información detallada de un dominio: DNS, IP, MX, NS, SSL y geo */
+  async domainInfo(dominio: string) {
+    return this.scraper('domaininfo', { dominio })
+  }
+
+  // ─────────── Fun ───────────
+
+  /** 🎮 Genera un cartel de recompensa estilo bucanero */
+  async bounty(imagen: string, texto: string) {
+    return this.scraper('bounty', { imagen, texto })
+  }
+
+  /** 🎮 Genera una imagen tipo BRAT (fondo blanco, texto negro) */
+  async brat(text: string) {
+    return this.scraper('brat', { text })
+  }
+
+  /** 🎮 Genera un video tipo BRAT con animación por palabras */
+  async bratVideo(text: string) {
+    return this.scraper('brat-video', { text })
+  }
+
+  /** 🎮 Genera una imagen con marco redondeado sobre plantilla decorativa */
+  async fakeIqc(media: string) {
+    return this.scraper('fakeiqc', { media })
+  }
+
+  /** 🎮 Genera una imagen tipo nota/fake de WhatsApp */
+  async fakeNote(texto: string, avatar: string, nombre: string) {
+    return this.scraper('fakenote', { texto, avatar, nombre })
+  }
+
+  /** 🎮 Genera una imagen tipo publicación de Instagram/Facebook */
+  async fakePost(avatar: string, usuario: string, media: string) {
+    return this.scraper('fakepost', { avatar, usuario, media })
+  }
+
+  // ─────────── Imagen ───────────
+
+  /** 🖼️ Mejora (upscale) imágenes a 4x con IA */
+  async upscale(url: string) {
+    return this.scraper('upscale', { url })
   }
 
   // ═══════════════════════════════════════════

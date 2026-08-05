@@ -7,6 +7,8 @@
  */
 
 export { OptiShieldClient } from './client.js'
+export { SCRAPERS, findScraper, toAlias } from './scrapers.js'
+export type { ScraperDef } from './scrapers.js'
 export type {
   OptiShieldOptions,
   UploadOptions,
@@ -23,4 +25,6 @@ export type {
   DeviceAuthResponse,
   DeviceAuthPollResponse,
   DeviceCredentials,
+  AIChatResult,
+  MediaResult,
 } from './types.js'

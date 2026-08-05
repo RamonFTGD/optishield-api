@@ -1,8 +1,8 @@
 # OptiShield API
 
 > Cliente oficial para la [API de OptiShield](https://optishield.uk/).
-> 
-> **32 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify, SoundCloud, Bandcamp, Apple Music, Reddit, Pinterest, Twitter/X y más. Incluye sistema de workers con polling, subida de archivos con expiración y proxy de descargas anti-CORS.
+>
+> **34 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y Pinterest. Busca en YouTube, TikTok, Spotify, Facebook, Pinterest, Minecraft mods y letras de canciones. Herramientas: clima, IP, dominios, traductor, stalker. **5 motores de IA** (orquestador unificado + 4 proveedores individuales). Incluye workers con polling, subida de archivos con expiración, proxy de descargas anti-CORS y acortador de URLs.
 
 ---
 
@@ -11,9 +11,6 @@
 ```bash
 # Desde GitHub (recomendado)
 npm install github:RamonFTGD/optishield-api#BotWhatsapp-MD
-
-# O descarga el tarball directo
-# https://optishield.uk/module/optishield-api-1.0.0.tgz
 
 # O agrégalo a tu package.json:
 # "dependencies": {
@@ -40,33 +37,6 @@ const result = await api.youtubeSearch('música relajante')
 console.log('🎵 Resultados:', result.result?.data?.length)
 ```
 
-**Respuesta real:**
-```json
-{
-  "scraper": "youtube-search",
-  "result": {
-    "success": true,
-    "data": [
-      {
-        "id": "ocCZPaskASo",
-        "title": "Musica para trabajar activo y alegre - Deep House Mix 2026 #95",
-        "url": "https://youtube.com/watch?v=ocCZPaskASo",
-        "duration": 13317,
-        "durationFormatted": "3:41:57",
-        "channel": "Deep Inovation",
-        "thumbnail": "https://i.ytimg.com/vi/ocCZPaskASo/hqdefault.jpg",
-        "views": 3531,
-        "viewsFormatted": "3.5K"
-      }
-    ],
-    "query": "música relajante",
-    "total": 9
-  },
-  "usage": { "used": 910, "max": 100000, "remaining": 99090 },
-  "timestamp": "2026-07-27T20:20:56.575Z"
-}
-```
-
 ### 🔑 O con API Key directa
 
 ```ts
@@ -76,74 +46,136 @@ const api = new OptiShieldClient({
   apiKey: 'osk_tu-api-key' // Obténla en https://optishield.uk/api-keys
 })
 
-const video = await api.youtube('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'mp4')
+const video = await api.youtubeDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'mp4')
 console.log('Título:', video.result?.title)
+```
+
+### 🤖 Chat con IA (unificado + individuales)
+
+```ts
+// Orquestador: prueba nova-ai → heckai → gptanon → google-gemma en cascada
+const chat = await api.ia('¿Cuál es la capital de Francia?')
+console.log('🤖', chat.result.resultado, '· vía', chat.result.via)
+
+// O elige el proveedor individual:
+await api.novaAI('Hola')
+await api.heckAI('Hola')
+await api.gptAnon('Hola')
+await api.googleGemma('Hola')
+
+// Con sesión conversacional:
+const s1 = await api.googleGemma('Me llamo Ramón')
+const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
 ```
 
 ---
 
-## 📋 APIs disponibles (32 scrapers)
+## 📋 APIs disponibles (34 scrapers)
 
-### 🎵 Descargadores
+### 🤖 IA
 
 | Scraper | Método del módulo | Descripción |
 |---------|-------------------|-------------|
-| `youtubedl` | `api.youtube(url, format?)` | YouTube DL — Videos + Shorts. `video=1` → MP4 480p, `video=0` → MP3 |
-| `tiktokdl` | `api.tiktok(url)` | Descarga videos o carruseles de TikTok sin marca de agua |
+| `ia` | `api.ia(prompt, sessionId?)` | **Orquestador unificado**: prueba 4 proveedores en cascada empezando por el más rápido |
+| `nova-ai` | `api.novaAI(prompt)` | Chat con Nova AI (Izuka API). Rápido y gratuito |
+| `heckai` | `api.heckAI(prompt, sessionId?)` | Chat con HeckAI (GPT-5.4-mini), sesiones conversacionales |
+| `gptanon` | `api.gptAnon(prompt, sessionId?, model?)` | Chat con GPTAnon (Google Gemma-3-27b), sesiones y modelos |
+| `google-gemma` | `api.googleGemma(prompt, sessionId?)` | Chat con Google Gemma AI (IkyyXd), sesiones |
+| `photoeditorai` | `api.photoEditorAI(image, prompt)` | Edita imágenes con IA siguiendo un prompt |
+
+### ⬇️ Descargadores
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `youtubedl` | `api.youtubeDownload(url, video?)` | YouTube DL — `video=1` → MP4 480p, `video=0` → MP3 |
+| `tiktokdl` | `api.tiktokDownload(url, opts?)` | Descarga videos o carruseles de TikTok sin marca de agua |
+| `igdl` | `api.instagramDownload(url)` | Descarga reels, posts y carruseles de Instagram |
+| `facebookdl` | `api.facebookDownload(url, format?)` | Descarga video o audio de Facebook (yt-dlp) |
 | `spotifydl` | `api.spotifyDownload(url)` | Descarga audio de Spotify con portada y letras incrustadas |
-| `soundcloud-dl` | `api.executeScraper('soundcloud-dl', { url })` | Descarga canciones de SoundCloud con metadatos ID3 |
-| `bandcamp-dl` | `api.executeScraper('bandcamp-dl', { url })` | Descarga canciones gratuitas de Bandcamp |
-| `apple-music-dl` | `api.executeScraper('apple-music-dl', { url })` | Preview 30s de Apple Music |
-| `instagram-search` → `instashadow` | `api.instagram(url)` | Descarga reels, posts, stories y perfiles de Instagram |
-| `facebookdl` | `api.facebook(url)` | Descarga videos/audio de Facebook hasta 720p |
-| `twitterdl` | `api.executeScraper('twitterdl', { url })` | Descarga videos, GIFs e imágenes de tweets |
-| `redditdl` | `api.executeScraper('redditdl', { url })` | Descarga videos, GIFs e imágenes de Reddit |
-| `pinterestdl` | `api.executeScraper('pinterestdl', { url })` | Descarga imágenes o videos de Pinterest |
-| `mediafiredl` | `api.executeScraper('mediafiredl', { url })` | Obtiene enlace de descarga de MediaFire |
+| `pinterestdl` | `api.pinterestDownload(url)` | Descarga imágenes o videos de Pinterest |
+| `mcmods-dl` | `api.mcmodsDownload(slug, opts?)` | Link directo de descarga de un mod de Minecraft (Modrinth) |
 
-### 🔍 Buscadores
+### 🔎 Buscadores
 
 | Scraper | Método del módulo | Descripción |
 |---------|-------------------|-------------|
-| `youtube-search` | `api.youtubeSearch(query)` | Busca videos en YouTube (rápido, HTML, sin yt-dlp) |
-| `ytsearch` | `api.executeScraper('ytsearch', { query })` | Busca videos en YouTube por palabra clave |
-| `tiktoksearch` | `api.executeScraper('tiktoksearch', { query })` | Busca videos en TikTok con links HD |
-| `spotifySearch` | `api.spotifySearch(query)` | Busca tracks en Spotify |
-| `soundcloud-search` | `api.executeScraper('soundcloud-search', { query })` | Busca canciones en SoundCloud v2 API |
-| `bandcamp-search` | `api.executeScraper('bandcamp-search', { q })` | Busca música en Bandcamp |
-| `apple-music-search` | `api.executeScraper('apple-music-search', { query })` | Busca en Apple Music vía iTunes API |
-| `reddit-search` | `api.executeScraper('reddit-search', { q })` | Busca posts en Reddit por subreddit o query |
-| `facebook-search` | `api.executeScraper('facebook-search', { query })` | Busca posts públicos de Facebook vía Google |
-| `pinterestSearch` | `api.executeScraper('pinterestSearch', { query })` | Búsqueda de imágenes en Pinterest |
+| `ytsearch` | `api.youtubeSearch(query, maxResults?)` | Busca videos en YouTube por palabra clave |
+| `tiktoksearch` | `api.tiktokSearch(query, count?)` | Busca videos en TikTok con links de descarga HD |
+| `spotify-search` | `api.spotifySearch(query, limit?)` | Busca canciones en Spotify |
+| `facebook-search` | `api.facebookSearch(query, limit?)` | Busca posts y videos públicos de Facebook |
+| `pinterestSearch` | `api.pinterestSearch(query, limit?)` | Búsqueda de imágenes en Pinterest |
+| `lyrics-search` | `api.lyricsSearch(query)` | Busca letras de canciones en Lyrics.com |
+| `mcmods-search` | `api.mcmodsSearch(q, opts?)` | Busca mods de Minecraft Java en Modrinth |
 
-### 🛠️ Herramientas & Scrapers
+### 🔍 Scrapers & Herramientas
 
 | Scraper | Método del módulo | Descripción |
 |---------|-------------------|-------------|
-| `iplocation` | `api.executeScraperSync('iplocation', { ip })` | Geolocalización de IP (país, región, ISP, ASN) |
-| `domaininfo` | `api.executeScraper('domaininfo', { dominio })` | DNS, IP, MX, NS, SSL y geo de un dominio |
-| `heckai` | `api.executeScraper('heckai', { prompt })` | Chat con IA (GPT-5.4-mini), sesiones conversacionales |
+| `clima` | `api.clima(ciudad)` | Clima actual de una ciudad (wttr.in) |
+| `iplocation` | `api.ipLocation(ip)` | Geolocalización de una dirección IP |
+| `domaininfo` | `api.domainInfo(dominio)` | DNS, IP, MX, NS, SSL y geo de un dominio |
+| `traductor` | `api.traductor(texto, idioma)` | Traduce texto a cualquier idioma |
+| `stalkyt` | `api.stalkYt(username)` | Información de un canal de YouTube |
+| `tiktokstalk` | `api.tiktokStalk(username)` | Información de un perfil de TikTok |
+| `wachannel` | `api.waChannel(url)` | Nombre, descripción e imagen de un canal de WhatsApp |
 
-### 🎨 Fun & Imágenes
+### 🎨 Fun
 
 | Scraper | Método del módulo | Descripción |
 |---------|-------------------|-------------|
-| `brat` | `api.executeScraper('brat', { text })` | Genera imagen BRAT (texto negro sobre blanco) |
-| `brat-video` | `api.executeScraper('brat-video', { text })` | Video animado tipo BRAT |
-| `bounty` | `api.executeScraper('bounty', { imagen, texto })` | Cartel de recompensa estilo bucanero |
-| `fakeiqc` | `api.executeScraper('fakeiqc', { media })` | Imagen con marco redondeado decorativo |
-| `fakenote` | `api.executeScraper('fakenote', { texto, avatar, nombre })` | Nota/fake de WhatsApp |
-| `fakepost` | `api.executeScraper('fakepost', { avatar, usuario, media })` | Post falso de Instagram/Facebook |
+| `brat` | `api.brat(text)` | Genera imagen BRAT (texto negro sobre blanco) |
+| `brat-video` | `api.bratVideo(text)` | Video animado tipo BRAT |
+| `bounty` | `api.bounty(imagen, texto)` | Cartel de recompensa estilo bucanero |
+| `fakeiqc` | `api.fakeIqc(media)` | Imagen con marco redondeado decorativo |
+| `fakenote` | `api.fakeNote(texto, avatar, nombre)` | Nota/fake de WhatsApp |
+| `fakepost` | `api.fakePost(avatar, usuario, media)` | Post falso de Instagram/Facebook |
+
+### 🖼️ Imagen
+
+| Scraper | Método del módulo | Descripción |
+|---------|-------------------|-------------|
+| `upscale` | `api.upscale(url)` | Mejora imágenes a 4x con IA |
+
+### 🪄 Método universal
+
+¿Un scraper sin helper o desconoces el método? Usa `scraper()` para **cualquier** nombre:
+
+```ts
+await api.scraper('tiktokdl', { url: 'https://tiktok.com/@user/video/123' })
+await api.scraper('ia', { prompt: 'Hola', sessionId: 'abc' })
+await api.scraper('youtubedl', { url: 'https://youtube.com/watch?v=xyz', video: 0 })
+await api.scraper('clima', { ciudad: 'Madrid' })
+```
+
+---
+
+## 📦 Catálogo programático
+
+Exporta `SCRAPERS` (lista con nombre, parámetros, grupo y descripción) para generar menús, comandos de bot o documentación dinámica:
+
+```ts
+import { SCRAPERS } from 'optishield-api'
+
+for (const s of SCRAPERS) {
+  console.log(`${s.group} → ${s.name} (params: ${s.params.join(', ')})`)
+}
+```
+
+O consulta el servidor en tiempo real:
+
+```ts
+const scrapers = await api.listScrapers()
+console.log(`📦 ${scrapers.total} scrapers disponibles`)
+```
 
 ---
 
 ## ⚡ Ejemplos con respuestas reales
 
-### YouTube Search
+### Chat IA (orquestador)
 
 ```ts
-const result = await api.youtubeSearch('música')
-console.log(JSON.stringify(result, null, 2))
+const result = await api.ia('Hola, responde solo "OK"')
 ```
 
 <details>
@@ -151,27 +183,17 @@ console.log(JSON.stringify(result, null, 2))
 
 ```json
 {
-  "scraper": "youtube-search",
+  "scraper": "ia",
   "result": {
-    "success": true,
-    "data": [
-      {
-        "id": "ocCZPaskASo",
-        "title": "Musica para trabajar activo y alegre - Deep House Mix 2026 #95",
-        "url": "https://youtube.com/watch?v=ocCZPaskASo",
-        "duration": 13317,
-        "durationFormatted": "3:41:57",
-        "channel": "Deep Inovation",
-        "thumbnail": "https://i.ytimg.com/vi/ocCZPaskASo/hqdefault.jpg",
-        "views": 3531,
-        "viewsFormatted": "3.5K"
-      }
-    ],
-    "query": "música",
-    "total": 10
+    "status": true,
+    "sessionId": null,
+    "resultado": "OK",
+    "modelo": "google/gemma-3-27b-it",
+    "via": "nova-ai",
+    "tiempoMs": 4321
   },
-  "usage": { "used": 911, "max": 100000, "remaining": 99089 },
-  "timestamp": "2026-07-27T20:23:47.187Z"
+  "usage": { "used": 1807, "max": 100000, "remaining": 98193 },
+  "timestamp": "2026-08-05T06:59:26.487Z"
 }
 ```
 </details>
@@ -179,58 +201,29 @@ console.log(JSON.stringify(result, null, 2))
 ### IP Location
 
 ```ts
-const result = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
-console.log(JSON.stringify(result, null, 2))
+const result = await api.ipLocation('8.8.8.8')
+console.log(result.result?.ubicacion?.ciudad)  // "Mountain View"
 ```
 
-<details>
-<summary>📖 Respuesta real</summary>
+### Traductor
 
-```json
-{
-  "scraper": "iplocation",
-  "result": {
-    "success": true,
-    "ip": "8.8.8.8",
-    "hostname": null,
-    "ubicacion": {
-      "pais": "United States",
-      "codigo_pais": "US",
-      "region": "California",
-      "ciudad": "Mountain View",
-      "coordenadas": { "latitud": "37.4220", "longitud": "-122.0850" }
-    },
-    "red": {
-      "isp": "Google LLC",
-      "asn": "AS15169",
-      "red": "AS15169 Google LLC (VPN, CDN, VPSH, ICRIT, ANYCAST, CONTENT)",
-      "tipo_uso": "Corporate / Hosting"
-    },
-    "hora": {
-      "zona_horaria": "America/Los_Angeles (PDT)",
-      "hora_local": "Mon, 27 Jul 2026 13:23:51 -0700"
-    }
-  },
-  "usage": { "used": 912, "max": 100000, "remaining": 99088 },
-  "timestamp": "2026-07-27T20:23:51.460Z"
-}
+```ts
+const result = await api.traductor('Hello world', 'es')
+console.log(result.result?.texto)  // "Hola mundo"
 ```
-</details>
+
+### Clima
+
+```ts
+const result = await api.clima('Madrid')
+console.log(result.result?.temp)  // 24°C
+```
 
 ### Ping & Health
 
 ```ts
 const pong = await api.ping()
-console.log(pong)
-// { "ok": true, "latency": 130 }
-```
-
-### Versión del servidor
-
-```ts
-const v = await api.version()
-console.log(v)
-// { "version": "1.0.0", "buildTime": "2026-07-27T19:51:00.596Z", "uptime": 1968.9 }
+console.log(pong)  // { "ok": true, "latency": 130 }
 ```
 
 ### Estadísticas de uso
@@ -239,33 +232,6 @@ console.log(v)
 const usage = await api.getUsage(7)
 console.log(`Total: ${usage.totalCalls} llamadas en ${usage.periodDays} días`)
 usage.byScraper.forEach(s => console.log(`  • ${s.scraper}: ${s.calls}`))
-```
-
-<details>
-<summary>📖 Respuesta real</summary>
-
-```json
-{
-  "periodDays": 7,
-  "totalCalls": 613,
-  "byScraper": [
-    { "scraper": "youtubedl", "calls": 274 },
-    { "scraper": "ytsearch", "calls": 218 },
-    { "scraper": "tiktokdl", "calls": 33 },
-    { "scraper": "youtube-search", "calls": 31 },
-    { "scraper": "tiktoksearch", "calls": 13 },
-    { "scraper": "iplocation", "calls": 9 }
-  ]
-}
-```
-</details>
-
-### Listar todos los scrapers
-
-```ts
-const scrapers = await api.listScrapers()
-console.log(`📦 ${scrapers.total} scrapers disponibles`)
-scrapers.scrapers.forEach(s => console.log(`  • ${s.name}: ${s.description || 'Sin descripción'}`))
 ```
 
 ---
@@ -316,16 +282,15 @@ await api.downloadToDisk('https://ejemplo.com/imagen.jpg', './descargas/foto.jpg
 ```ts
 const short = await api.shortenUrl('https://ejemplo.com/articulo-muy-largo')
 console.log('URL corta:', short.shortUrl)  // https://optishield.uk/r/aB3xK9
-console.log('Código:', short.code)
 ```
 
 ---
 
-## 🤖 Scrapers personalizados
+## 🤖 Scrapers personalizados (worker + polling)
 
 ```ts
 // Worker + polling (para procesos largos)
-const result = await api.executeScraper('tiktok', {
+const result = await api.executeScraper('tiktokdl', {
   url: 'https://vt.tiktok.com/ZSX...'
 }, {
   maxRetries: 30,  // 30 intentos
@@ -340,30 +305,84 @@ const ipInfo = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
 
 ## 📚 Referencia completa de métodos
 
+### 🤖 IA
 | Método | Descripción |
 |--------|-------------|
-| `youtube(url, format?)` | Descarga video/audio de YouTube (mp4/mp3) |
-| `youtubeSearch(query)` | Busca videos en YouTube |
-| `tiktok(url)` | Descarga video de TikTok sin marca de agua |
-| `spotifySearch(query)` | Busca canciones en Spotify |
-| `spotifyDownload(url)` | Descarga canción de Spotify |
-| `instagram(url)` | Descarga contenido de Instagram |
-| `facebook(url)` | Descarga video de Facebook |
+| `ia(prompt, sessionId?)` | Chat IA orquestador (4 proveedores en cascada) |
+| `novaAI(prompt)` | Chat con Nova AI |
+| `heckAI(prompt, sessionId?)` | Chat con HeckAI |
+| `gptAnon(prompt, sessionId?, model?)` | Chat con GPTAnon |
+| `googleGemma(prompt, sessionId?)` | Chat con Google Gemma |
+| `photoEditorAI(image, prompt)` | Edita imágenes con IA |
+
+### ⬇️ Descargadores
+| Método | Descripción |
+|--------|-------------|
+| `youtubeDownload(url, video?)` | YouTube (MP4/MP3) |
+| `youtube(url, video?)` | Alias de youtubeDownload |
+| `tiktokDownload(url, opts?)` | TikTok sin marca de agua |
+| `tiktok(url)` | Alias de tiktokDownload |
+| `instagramDownload(url)` | Instagram (reels, posts, carruseles) |
+| `instagram(url)` | Alias de instagramDownload |
+| `facebookDownload(url, format?)` | Facebook (video/audio) |
+| `facebook(url, format?)` | Alias de facebookDownload |
+| `spotifyDownload(url)` | Spotify (audio + portada + letras) |
+| `pinterestDownload(url)` | Pinterest (imágenes/videos) |
+| `mcmodsDownload(slug, opts?)` | Mod de Minecraft (Modrinth) |
+
+### 🔎 Buscadores
+| Método | Descripción |
+|--------|-------------|
+| `youtubeSearch(query, maxResults?)` | Busca videos en YouTube |
+| `spotifySearch(query, limit?)` | Busca canciones en Spotify |
+| `tiktokSearch(query, count?)` | Busca videos en TikTok |
+| `facebookSearch(query, limit?)` | Busca posts en Facebook |
+| `pinterestSearch(query, limit?)` | Busca imágenes en Pinterest |
+| `lyricsSearch(query)` | Busca letras de canciones |
+| `mcmodsSearch(q, opts?)` | Busca mods de Minecraft |
+
+### 🔍 Scrapers & Herramientas
+| Método | Descripción |
+|--------|-------------|
+| `clima(ciudad)` | Clima de una ciudad |
+| `ipLocation(ip)` | Geolocalización de IP |
+| `domainInfo(dominio)` | Información de un dominio |
+| `traductor(texto, idioma)` | Traductor |
+| `stalkYt(username)` | Stalker de canal de YouTube |
+| `tiktokStalk(username)` | Stalker de perfil de TikTok |
+| `waChannel(url)` | Información de canal de WhatsApp |
+
+### 🎨 Fun & Imagen
+| Método | Descripción |
+|--------|-------------|
+| `bounty(imagen, texto)` | Cartel de recompensa |
+| `brat(text)` | Imagen tipo BRAT |
+| `bratVideo(text)` | Video tipo BRAT |
+| `fakeIqc(media)` | Imagen con marco decorativo |
+| `fakeNote(texto, avatar, nombre)` | Nota/fake de WhatsApp |
+| `fakePost(avatar, usuario, media)` | Post falso de Instagram |
+| `upscale(url)` | Upscale de imagen a 4x |
+
+### 🪄 Universal & Utilidades
+| Método | Descripción |
+|--------|-------------|
+| `scraper(name, params, opts?)` | Ejecuta cualquier scraper por nombre |
+| `callScraper(name, params, opts?)` | Alias de `scraper` |
 | `executeScraper(name, params, pollOpts?)` | Ejecuta scraper con worker + polling |
 | `executeScraperSync(name, params)` | Ejecuta scraper síncrono |
-| `uploadFile(buffer, name, mime, opts?)` | Sube archivo con expiración configurable |
-| `downloadUpload(uploadUrl)` | Descarga archivo subido previamente |
-| `downloadFile(url, opts?)` | Descarga archivo desde URL externa (proxy anti-CORS) |
-| `downloadToDisk(url, outputPath, opts?)` | Descarga y guarda directamente en disco |
+| `uploadFile(buffer, name, mime, opts?)` | Sube archivo con expiración |
+| `downloadUpload(uploadUrl)` | Descarga archivo subido |
+| `downloadFile(url, opts?)` | Descarga archivo externo (proxy anti-CORS) |
+| `downloadToDisk(url, outputPath, opts?)` | Descarga y guarda en disco |
 | `shortenUrl(url)` | Acorta URLs |
 | `listScrapers()` | Lista scrapers disponibles |
-| `getScraperInfo(name)` | Información detallada de un scraper |
-| `getUsage(days?)` | Estadísticas de uso de la API |
-| `ping()` | Verifica conexión con el servidor |
-| `version()` | Información de versión del servidor |
-| `login(pollInterval?, timeout?)` | Inicia sesión por dispositivo (recomendado) |
-| `logout()` | Cierra sesión y elimina credenciales guardadas |
-| `isLoggedIn()` | Verifica si hay sesión activa |
+| `getScraperInfo(name)` | Información de un scraper |
+| `getUsage(days?)` | Estadísticas de uso |
+| `ping()` | Verifica conexión |
+| `version()` | Versión del servidor |
+| `login(pollInterval?, timeout?)` | Login por dispositivo |
+| `logout()` | Cierra sesión y limpia credenciales |
+| `isLoggedIn()` | Verifica sesión activa |
 
 ---
 
@@ -377,7 +396,7 @@ const ipInfo = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
 | `Límite de solicitudes` | Alcanzaste tu cuota mensual | Mejora tu plan o espera al próximo mes |
 | `Timeout: worker no completó` | El scraper tomó demasiado tiempo | Aumenta `maxRetries` o `interval` en executeScraper |
 | `El archivo ha expirado` | El upload alcanzó su fecha de expiración | Vuelve a subir el archivo |
-| `Código expirado` | El código de autenticación por dispositivo expiró | Vuelve a ejecutar `api.login()` |
+| `Código expirado` | El código de autenticación expiró | Vuelve a ejecutar `api.login()` |
 
 ---
 
@@ -394,7 +413,10 @@ import {
   WorkerResponse,
   ScraperResult,
   ScraperList,
-  UsageStats
+  AIChatResult,
+  MediaResult,
+  SCRAPERS,
+  ScraperDef,
 } from 'optishield-api'
 
 const opts: OptiShieldOptions = { apiKey: '...' }

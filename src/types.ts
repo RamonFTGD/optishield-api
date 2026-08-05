@@ -39,6 +39,59 @@ export interface ScraperResult {
   timestamp?: string
 }
 
+/** Resultado de un chat con IA (orquestador `ia` o proveedores individuales) */
+export interface AIChatResult {
+  status: boolean
+  sessionId?: string | null
+  resultado: string
+  modelo?: string
+  /** Proveedor que respondió (solo en el orquestador `ia`) */
+  via?: string
+  /** Tiempo de respuesta en ms (solo en el orquestador `ia`) */
+  tiempoMs?: number
+}
+
+/** Resultado de un scraper que devuelve archivos (descargadores) */
+export interface MediaResult {
+  success?: boolean
+  status?: boolean
+  title?: string
+  type?: string
+  /** TikTok dl: URL del video descargado */
+  file?: string
+  /** TikTok dl: URL del audio */
+  audio?: string
+  /** Descargadores con lista de media (igdl, pinterestdl, etc.) */
+  media?: Array<{ url?: string; type?: string; quality?: string }>
+  /** igdl: lista de media descargada */
+  medias?: Array<{ url?: string; type?: string; quality?: string }>
+  /** spotify-search: tracks encontrados */
+  tracks?: Array<{
+    url?: string
+    title?: string
+    artist?: string
+    album?: string
+    thumbnail?: string
+    duration?: number
+  }>
+  /** Buscadores con lista genérica de resultados */
+  data?: Array<Record<string, any>>
+  /** Tiktoksearch/ytsearch: resultados de búsqueda */
+  results?: Array<Record<string, any>>
+  count?: number
+  total?: number
+  url?: string
+  links?: Record<string, string>
+  source?: string
+  info?: {
+    title?: string
+    author?: string
+    username?: string
+    thumbnail?: string
+    video_id?: string
+  }
+}
+
 export interface ScraperList {
   scrapers: Array<{
     name: string

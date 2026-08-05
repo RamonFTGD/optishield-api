@@ -1,7 +1,7 @@
 {
   "name": "optishield-api",
-  "version": "1.1.0",
-  "description": "Cliente oficial para la API de OptiShield. Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y m\u00e1s. Incluye sistema de workers con polling y subida de archivos con expiraci\u00f3n.",
+  "version": "2.0.0",
+  "description": "Cliente oficial para la API de OptiShield. Más de 30 scrapers: YouTube, TikTok, Instagram, Facebook, Spotify, Pinterest, Minecraft mods, clima, traductor, stalker y 5 motores de IA (orquestador + nova-ai, heckai, gptanon, google-gemma). Incluye workers con polling, subida de archivos con expiración y acortador de URLs.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,10 +28,20 @@
     "instagram-downloader",
     "facebook-downloader",
     "spotify-downloader",
+    "pinterest-downloader",
     "scraper",
     "whatsapp-bot",
+    "chatbot",
+    "ai",
+    "gpt",
+    "gemma",
+    "nova-ai",
+    "heckai",
+    "gptanon",
     "file-upload",
-    "worker-pooling"
+    "worker-pooling",
+    "short-url",
+    "mcmods"
   ],
   "license": "MIT",
   "repository": {
