@@ -271,7 +271,7 @@ export class OptiShieldClient {
    * Inicia sesión en OptiShield usando autenticación por dispositivo.
    *
    * Genera un código único y te da una URL para que visites desde tu navegador.
-   * Allí podrás iniciar sesión con Discord o GitHub para autorizar este dispositivo.
+   * Allí podrás iniciar sesión con Discord, GitHub o Google para autorizar este dispositivo.
    * Las credenciales se guardan en `~/.optishield/credentials.json`.
    *
    * @param pollInterval - Intervalo de polling en ms (default: 2000)
@@ -312,7 +312,7 @@ export class OptiShieldClient {
     console.log('║   1. Abre este enlace en tu navegador:           ║')
     console.log(`║   👉 ${url.padEnd(45)}║`)
     console.log('║                                                  ║')
-    console.log('║   2. Inicia sesión con Discord o GitHub          ║')
+    console.log('║   2. Inicia sesión con Discord, GitHub o Google ║')
     console.log('║                                                  ║')
     console.log(`║   ⏱️  El código expira en ${expiresIn / 60} minutos            ║`)
     console.log('║                                                  ║')

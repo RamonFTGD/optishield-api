@@ -31,7 +31,7 @@ const api = new OptiShieldClient()
 // ⚡ Sin credenciales → la primera llamada genera una URL automáticamente
 
 const result = await api.youtubeSearch('música relajante')
-// ↑ Muestra URL, la abres en tu navegador, autorizas, ¡y listo!
+// ↑ Muestra URL, la abres en tu navegador, autorizas (Discord, GitHub o Google), ¡y listo!
 // Las credenciales se guardan en ~/.optishield/credentials.json
 
 console.log('🎵 Resultados:', result.result?.data?.length)
