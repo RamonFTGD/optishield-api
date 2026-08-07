@@ -949,6 +949,14 @@ export class OptiShieldClient {
     return this.scraper('upscale', { url })
   }
 
+  /** 🎨 Genera imágenes desde un texto con IA (SD-Turbo en PyTorch, PC Maestra) */
+  async aiImage(
+    prompt: string,
+    opts?: { negative?: string; width?: number; height?: number; steps?: number; seed?: number }
+  ) {
+    return this.scraper('ai-image', { prompt, ...opts })
+  }
+
   // ═══════════════════════════════════════════
   //  UTILIDADES
   // ═══════════════════════════════════════════

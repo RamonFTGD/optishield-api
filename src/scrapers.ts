@@ -67,6 +67,7 @@ export const SCRAPERS: ScraperDef[] = [
 
   // ══════════ 🖼️ IMAGEN ══════════
   { name: 'upscale', alias: 'upscale', params: ['url'], optional: ['apikey'], group: 'Imagen', description: 'Mejora (upscale) imágenes a 4x con IA' },
+  { name: 'ai-image', alias: 'aiImage', params: ['prompt'], optional: ['negative', 'width', 'height', 'steps', 'seed'], group: 'Imagen', description: 'Genera imágenes desde un texto con IA (SD-Turbo en PyTorch, PC Maestra)' },
 ]
 
 /** Busca un scraper por nombre o alias */

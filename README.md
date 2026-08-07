@@ -2,7 +2,7 @@
 
 > Cliente oficial para la [API de OptiShield](https://optishield.uk/).
 >
-> **34 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y Pinterest. Busca en YouTube, TikTok, Spotify, Facebook, Pinterest, Minecraft mods y letras de canciones. Herramientas: clima, IP, dominios, traductor, stalker. **5 motores de IA** (orquestador unificado + 4 proveedores individuales). Incluye workers con polling, subida de archivos con expiración, proxy de descargas anti-CORS y acortador de URLs.
+> **35 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y Pinterest. Busca en YouTube, TikTok, Spotify, Facebook, Pinterest, Minecraft mods y letras de canciones. Herramientas: clima, IP, dominios, traductor, stalker. **5 motores de IA** (orquestador unificado + 4 proveedores individuales). Incluye workers con polling, subida de archivos con expiración, proxy de descargas anti-CORS y acortador de URLs.
 
 ---
 
@@ -70,7 +70,7 @@ const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
 
 ---
 
-## 📋 APIs disponibles (34 scrapers)
+## 📋 APIs disponibles (35 scrapers)
 
 ### 🤖 IA
 
@@ -135,6 +135,7 @@ const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
 | Scraper | Método del módulo | Descripción |
 |---------|-------------------|-------------|
 | `upscale` | `api.upscale(url)` | Mejora imágenes a 4x con IA |
+| `ai-image` | `api.aiImage(prompt, opts?)` | Genera imágenes desde texto con IA (SD-Turbo en PyTorch, PC Maestra). `opts`: `negative`, `width`, `height`, `steps`, `seed` |
 
 ### 🪄 Método universal
 
