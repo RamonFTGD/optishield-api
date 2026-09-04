@@ -5,20 +5,40 @@ export interface OptiShieldOptions {
   apiKey?: string
   /** URL base de la API (por defecto https://optishield.uk/api) */
   baseUrl?: string
+  /** Suprime los banners de estado al importar (útil para el singleton `cli`) */
+  silent?: boolean
+}
+
+/** Resultado crudo de un worker: lo que devuelve `cli.api()` */
+export interface UniversalApiResult {
+  success: boolean
+  data: any
+  resultId?: string
+  error?: string
 }
 
 export interface UploadOptions {
-  /** Días hasta que expire el archivo (default: 3) */
+  /** Días hasta que expire el archivo (default: 3, máx 30) */
   expiresInDays?: number
 }
 
 export interface UploadResult {
-  /** URL pública del archivo subido */
+  /** URL pública del archivo subido (página /upload/:id) */
   url: string
-  /** Fecha de expiración ISO */
-  expiresAt: string
+  /** URL directa de descarga (expira si el archivo es temporal) */
+  directUrl: string
+  /** Fecha de expiración ISO (solo si no es permanente) */
+  expiresAt?: string
+  /** true si el archivo se almacenó de forma permanente */
+  permanent: boolean
   /** ID del archivo */
   id: string
+  /** Nombre original del archivo */
+  filename?: string
+  /** Tamaño en bytes */
+  size?: number
+  /** Tipo MIME */
+  contentType?: string
 }
 
 export interface WorkerResponse {

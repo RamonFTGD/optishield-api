@@ -1,7 +1,7 @@
 {
   "name": "optishield-api",
-  "version": "2.1.0",
-  "description": "Cliente oficial para la API de OptiShield. Más de 30 scrapers: YouTube, TikTok, Instagram, Facebook, Spotify, Pinterest, Minecraft mods, clima, traductor, stalker y 5 motores de IA (orquestador + nova-ai, heckai, gptanon, google-gemma). Incluye workers con polling, subida de archivos con expiración y acortador de URLs.",
+  "version": "2.2.0",
+  "description": "Cliente oficial para la API de OptiShield. Más de 30 scrapers: YouTube, TikTok, Instagram, Facebook, Spotify, Pinterest, clima, traductor, stalker y 5 motores de IA (orquestador + nova-ai, heckai, gptanon, google-gemma). Incluye workers con polling, subida de archivos con expiración y acortador de URLs.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,8 +40,7 @@
     "gptanon",
     "file-upload",
     "worker-pooling",
-    "short-url",
-    "mcmods"
+    "short-url"
   ],
   "license": "MIT",
   "repository": {

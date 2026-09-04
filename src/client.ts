@@ -16,7 +16,9 @@ import type {
   MessageDashboard,
   AllMessageDashboards,
   RecoveryMetricsData,
+  UniversalApiResult,
 } from './types.js'
+import { findScraper } from './scrapers.js'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
@@ -217,7 +219,7 @@ export class OptiShieldClient {
     )
 
     // Si necesita autenticación, mostrar mensaje inmediatamente
-    if (this.needsAuth) {
+    if (this.needsAuth && !opts.silent) {
       // No bloqueamos el constructor — el login se hará en la 1ª llamada
       console.log('')
       console.log('╔══════════════════════════════════════════════════╗')
@@ -568,18 +570,18 @@ export class OptiShieldClient {
   }
 
   // ═══════════════════════════════════════════
-  //  FILE UPLOAD (con expiración)
+  //  FILE UPLOAD (temporal con expiración + permanente)
   // ═══════════════════════════════════════════
 
   /**
    * Sube un archivo al servidor de OptiShield.
-   * Se almacena en el cluster Windows (D://tmp) con expiración configurable.
+   * Se almacena en el cluster 1TB con expiración configurable.
    *
    * @param buffer - Buffer del archivo a subir
    * @param filename - Nombre del archivo (ej: 'video.mp4')
    * @param mimetype - Tipo MIME (ej: 'video/mp4')
    * @param opts - Opciones de expiración
-   * @returns Información del archivo subido (URL pública + fecha de expiración)
+   * @returns Información del archivo subido (URL pública + URL directa + expiración)
    *
    * @example
    * ```ts
@@ -593,14 +595,75 @@ export class OptiShieldClient {
    * console.log('Expira:', upload.expiresAt)
    * ```
    */
-  async uploadFile(
+  /**
+   * Sube un archivo de forma TEMPORAL (expira en 3 días por defecto).
+   * Devuelve una URL pública (`/upload/:id`) y una URL directa de descarga.
+   *
+   * @param buffer - Contenido del archivo
+   * @param filename - Nombre del archivo (ej: 'mi-video.mp4')
+   * @param mimetype - Tipo MIME (ej: 'video/mp4')
+   * @param opts - Opciones de expiración
+   * @returns Información del archivo subido (URL pública + URL directa + expiración)
+   *
+   * @example
+   * ```ts
+   * const upload = await api.uploadFileTemporary(
+   *   buffer,
+   *   'mi-video.mp4',
+   *   'video/mp4',
+   *   { expiresInDays: 7 }
+   * )
+   * console.log('Descarga directa:', upload.directUrl)
+   * console.log('Expira:', upload.expiresAt)
+   * ```
+   */
+  async uploadFileTemporary(
     buffer: Buffer,
     filename: string,
     mimetype: string,
     opts?: UploadOptions
   ): Promise<UploadResult> {
-    await this.ensureAuth()
     const expiresInDays = opts?.expiresInDays ?? DEFAULT_EXPIRES_DAYS
+    const query = expiresInDays > 0 ? `?expiresInDays=${Math.min(expiresInDays, 30)}` : ''
+    return this.uploadRequest('/upload-file' + query, buffer, filename, mimetype, false)
+  }
+
+  /**
+   * Sube un archivo de forma PERMANENTE (no expira).
+   * Se almacena en el cluster 1TB de OptiShield. Ideal para assets,
+   * avatares, documentos que deben estar siempre disponibles.
+   *
+   * @param buffer - Contenido del archivo
+   * @param filename - Nombre del archivo (ej: 'logo.png')
+   * @param mimetype - Tipo MIME (ej: 'image/png')
+   * @returns Información del archivo subido (URL pública + URL directa, sin expiración)
+   *
+   * @example
+   * ```ts
+   * const upload = await api.uploadFilePermanent(
+   *   buffer,
+   *   'logo.png',
+   *   'image/png'
+   * )
+   * console.log('Descarga directa (permanente):', upload.directUrl)
+   * ```
+   */
+  async uploadFilePermanent(
+    buffer: Buffer,
+    filename: string,
+    mimetype: string
+  ): Promise<UploadResult> {
+    return this.uploadRequest('/upload-file/permanent', buffer, filename, mimetype, true)
+  }
+
+  private async uploadRequest(
+    endpoint: string,
+    buffer: Buffer,
+    filename: string,
+    mimetype: string,
+    permanent: boolean
+  ): Promise<UploadResult> {
+    await this.ensureAuth()
 
     const form = new FormData()
     form.append('file', buffer, {
@@ -611,7 +674,7 @@ export class OptiShieldClient {
 
     let res
     try {
-      res = await this.client.post('/upload-file', form, {
+      res = await this.client.post(endpoint, form, {
         headers: {
           ...form.getHeaders(),
           'X-API-Key': this.apiKey,
@@ -634,7 +697,7 @@ export class OptiShieldClient {
       throw new Error(`Error al subir archivo: ${err.message || err}`)
     }
 
-    const data = res.data as { url: string; id?: string }
+    const data = res.data as UploadResult & { url: string }
 
     if (!data.url) {
       throw new Error(
@@ -644,18 +707,39 @@ export class OptiShieldClient {
 
     // Extraer ID de la URL /upload/:id
     const uploadId = data.url.split('/upload/').pop() || data.id || ''
-    const expiresAt = Date.now() + expiresInDays * 24 * 60 * 60 * 1000
+    const expiresAt = data.expiresAt
+      ? Date.parse(data.expiresAt)
+      : permanent
+        ? null
+        : Date.now() + DEFAULT_EXPIRES_DAYS * 24 * 60 * 60 * 1000
 
     // Guardar expiración en cache local
-    if (uploadId) {
+    if (uploadId && expiresAt) {
       expirationCache.set(uploadId, expiresAt)
     }
 
     return {
       url: data.url,
-      expiresAt: new Date(expiresAt).toISOString(),
+      directUrl: data.directUrl || data.url,
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      permanent: data.permanent ?? permanent,
       id: uploadId,
+      filename: data.filename || filename,
+      size: data.size,
+      contentType: data.contentType || mimetype,
     }
+  }
+
+  /**
+   * Alias de uploadFileTemporary() para compatibilidad con código existente.
+   */
+  async uploadFile(
+    buffer: Buffer,
+    filename: string,
+    mimetype: string,
+    opts?: UploadOptions
+  ): Promise<UploadResult> {
+    return this.uploadFileTemporary(buffer, filename, mimetype, opts)
   }
 
   /**
@@ -726,6 +810,129 @@ export class OptiShieldClient {
     opts?: { sync?: boolean }
   ): Promise<ScraperResult> {
     return this.scraper(name, params, opts)
+  }
+
+  // ═══════════════════════════════════════════
+  //  MÉTODO UNIVERSAL — cli.api()
+  //  ═══════════════════════════════════════════
+
+  /**
+   * 🔥 MÉTODO UNIVERSAL: ejecuta CUALQUIER scraper de la API por su nombre.
+   *
+   * Hace el submit + polling automático y devuelve el objeto crudo del worker:
+   * `{ success, data, resultId }`. No requiere agregar código al módulo cuando
+   * se añade un scraper nuevo: basta con llamar `cli.api('nombre', { params })`.
+   *
+   * @param name - Nombre o alias del scraper (ej: 'brat', 'youtubedl', 'ia', 'tiktokdl')
+   * @param params - Parámetros del scraper (ej: `{ text: 'Hola' }`)
+   * @param opts - Opciones (optional)
+   * @returns Objeto crudo del worker: `{ success, data, resultId }`
+   *
+   * @example
+   * ```ts
+   * import cli from 'optishield-api'
+   *
+   * // Genera una imagen BRAT
+   * const res = await cli.api('brat', { text: 'Hola' })
+   * console.log(res.success, res.data.img, res.resultId)
+   *
+   * // Descarga un video de YouTube (mp3)
+   * await cli.api('youtubedl', { url: 'https://youtube.com/watch?v=...', video: 0 })
+   *
+   * // Chat con IA (orquestador unificado)
+   * await cli.api('ia', { prompt: 'Hola' })
+   * ```
+   */
+  async api(
+    name: string,
+    params: Record<string, any> = {},
+    opts?: {
+      maxRetries?: number
+      interval?: number
+    }
+  ): Promise<UniversalApiResult> {
+    await this.ensureAuth()
+
+    // Resolver alias → nombre real del scraper (si existe en el catálogo local).
+    // Si no existe, se usa el nombre tal cual: el servidor valida y rechaza si no es válido.
+    const resolved = findScraper(name)
+    const realName = resolved?.name || name
+
+    const maxRetries = opts?.maxRetries ?? DEFAULT_POLL_MAX_RETRIES
+    const interval = opts?.interval ?? DEFAULT_POLL_INTERVAL
+
+    // 1. Enviar en modo async (siempre polling) → el worker procesa en el pool
+    const submitRes = await this.client.post(
+      `/scrapers/${realName}/execute`,
+      params,
+      {
+        params: { async: '1' },
+        timeout: 30_000,
+      }
+    )
+
+    const submitData = submitRes.data as {
+      worker?: string
+      usage?: { used: number; max: number; remaining: number }
+    }
+
+    if (!submitData.worker) {
+      throw new Error(
+        `El scraper '${realName}' no devolvió un worker. Respuesta: ${JSON.stringify(submitData)}`
+      )
+    }
+
+    const workerId = submitData.worker.split('/').pop()
+    if (!workerId) {
+      throw new Error(`No se pudo extraer workerId de: ${submitData.worker}`)
+    }
+
+    // 2. Polling automático hasta que el worker complete
+    let consecutiveErrors = 0
+
+    for (let i = 0; i < maxRetries; i++) {
+      await sleep(interval)
+
+      const pollRes = await this.client
+        .get<WorkerResponse>(`/scrapers/worker/${workerId}`, {
+          timeout: 10_000,
+        })
+        .catch((err: any) => {
+          consecutiveErrors++
+          if (consecutiveErrors >= 5) {
+            console.warn(
+              `[optishield-api] Polling ${name} (${i + 1}/${maxRetries}): ${err?.message || 'error de red'}`
+            )
+          }
+          return null
+        })
+
+      if (!pollRes) continue
+      consecutiveErrors = 0
+
+      const pollData = pollRes.data
+
+      // ✅ Worker completado → devolver el objeto crudo { success, data, resultId }
+      if (pollData.success && pollData.data) {
+        return {
+          success: true,
+          data: pollData.data,
+          resultId: pollData.resultId,
+        }
+      }
+
+      if (pollData.error) {
+        // Si el worker aún no está listo, continuar polling
+        if (pollData.error.includes('not found') || pollData.error.includes('expir')) {
+          continue
+        }
+        throw new Error(`Worker error: ${pollData.error}`)
+      }
+    }
+
+    throw new Error(
+      `Timeout: El worker ${workerId} no completó después de ${maxRetries} intentos (${(maxRetries * interval) / 1000}s)`
+    )
   }
 
   // ═══════════════════════════════════════════
@@ -825,14 +1032,6 @@ export class OptiShieldClient {
     return this.scraper('pinterestdl', { url })
   }
 
-  /** ⬇️ Link directo de descarga de un mod de Minecraft (Modrinth) */
-  async mcmodsDownload(
-    slug: string,
-    opts?: { version?: string; loader?: string; versionId?: string; limit?: number }
-  ) {
-    return this.scraper('mcmods-dl', { slug, ...opts })
-  }
-
   // ─────────── Buscadores ───────────
 
   /** 🔎 Busca videos en YouTube */
@@ -863,14 +1062,6 @@ export class OptiShieldClient {
   /** 🔎 Busca letras de canciones en Lyrics.com */
   async lyricsSearch(query: string) {
     return this.scraper('lyrics-search', { query })
-  }
-
-  /** 🔎 Busca mods de Minecraft Java en Modrinth */
-  async mcmodsSearch(
-    q: string,
-    opts?: { version?: string; loader?: string; limit?: number; index?: number; sort?: string }
-  ) {
-    return this.scraper('mcmods-search', { q, ...opts })
   }
 
   // ─────────── Scrapers ───────────

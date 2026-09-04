@@ -2,7 +2,7 @@
 
 > Cliente oficial para la [API de OptiShield](https://optishield.uk/).
 >
-> **35 scrapers disponibles** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y Pinterest. Busca en YouTube, TikTok, Spotify, Facebook, Pinterest, Minecraft mods y letras de canciones. Herramientas: clima, IP, dominios, traductor, stalker. **5 motores de IA** (orquestador unificado + 4 proveedores individuales). Incluye workers con polling, subida de archivos con expiración, proxy de descargas anti-CORS y acortador de URLs.
+> **TODOS los scrapers del servidor con UNA sola función `cli.api()`** — Descarga videos/audio de YouTube, TikTok, Instagram, Facebook, Spotify y Pinterest. Busca en YouTube, TikTok, Spotify, Facebook, Pinterest y letras de canciones. Herramientas: clima, IP, dominios, traductor, stalker. **IA** (orquestador unificado + proveedores individuales). Incluye workers con polling automático, subida de archivos con expiración, proxy de descargas anti-CORS y acortador de URLs.
 
 ---
 
@@ -22,50 +22,82 @@ npm install github:RamonFTGD/optishield-api#BotWhatsapp-MD
 
 ## 🚀 Inicio rápido
 
-### 🔐 Auto-login (recomendado — sin API key manual)
+### 🎯 Método universal `cli.api()` (recomendado)
+
+**Una sola función para TODOS los scrapers** (nuevos y existentes) con submit + polling automático.
 
 ```ts
-import { OptiShieldClient } from 'optishield-api'
-
-const api = new OptiShieldClient()
+import cli from 'optishield-api'
 // ⚡ Sin credenciales → la primera llamada genera una URL automáticamente
 
-const result = await api.youtubeSearch('música relajante')
+// Ejecuta cualquier scraper por su nombre, con polling automático
+const res = await cli.api('brat', { text: 'Hola' })
+// ↑ Devuelve el objeto crudo del worker:
+//   { success: true, data: { img: '...', creador: '...' }, resultId: 'hex...' }
+
+console.log(res.success)    // true
+console.log(res.data.img)   // 🖼️ imagen generada
+console.log(res.resultId)   // 📎 para ver el resultado después: /api/scrapers/result/:resultId
+
+// Ejemplos con otros scrapers:
+await cli.api('youtubedl', { url: 'https://youtube.com/watch?v=...', video: 0 })   // mp3
+await cli.api('tiktokdl', { url: 'https://tiktok.com/@u/v/...' })                  // video TikTok
+await cli.api('ia', { prompt: 'Hola' })                                            // chat IA unificado
+await cli.api('clima', { ciudad: 'Lima' })                                         // clima
+
+// Opciones avanzadas de polling:
+const slow = await cli.api('youtubedl', { url: '...' }, {
+  maxRetries: 150,      // más intentos (default 60)
+  interval: 1000,       // polling más agresivo (default 2000ms)
+})
+```
+
+> 🆕 **NO necesitas actualizar el módulo cuando se añade un scraper nuevo.**
+> Cualquier scraper que exista en el servidor se llama con `cli.api('nombre', { ... })`.
+
+### 🏭 O crea tu propio cliente (`createClient` / `new OptiShieldClient`)
+
+```ts
+import { createClient, OptiShieldClient } from 'optishield-api'
+
+const api1 = createClient({ apiKey: 'osk_tu-api-key' })
+const api2 = new OptiShieldClient() // equivalente
+```
+
+### 🔐 Auto-login (sin API key manual)
+
+```ts
+import cli from 'optishield-api'
+
+const res = await cli.api('brat', { text: 'Hola' })
 // ↑ Muestra URL, la abres en tu navegador, autorizas (Discord, GitHub o Google), ¡y listo!
 // Las credenciales se guardan en ~/.optishield/credentials.json
-
-console.log('🎵 Resultados:', result.result?.data?.length)
 ```
 
 ### 🔑 O con API Key directa
 
 ```ts
-import { OptiShieldClient } from 'optishield-api'
+import cli from 'optishield-api'
 
-const api = new OptiShieldClient({
-  apiKey: 'osk_tu-api-key' // Obténla en https://optishield.uk/api-keys
+// ... o createClient({ apiKey: 'osk_tu-api-key' }) — obténla en https://optishield.uk/api-keys
+const video = await cli.api('youtubedl', {
+  url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  video: 1, // 1 = mp4, 0 = mp3
 })
-
-const video = await api.youtubeDownload('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'mp4')
-console.log('Título:', video.result?.title)
+console.log('Título:', video.data?.title)
 ```
 
-### 🤖 Chat con IA (unificado + individuales)
+### 📚 Métodos tipados (conveniencia — además de `cli.api()`)
 
 ```ts
-// Orquestador: prueba nova-ai → heckai → gptanon → google-gemma en cascada
-const chat = await api.ia('¿Cuál es la capital de Francia?')
+import cli from 'optishield-api'
+
+const chat = await cli.ia('¿Cuál es la capital de Francia?')
 console.log('🤖', chat.result.resultado, '· vía', chat.result.via)
 
-// O elige el proveedor individual:
-await api.novaAI('Hola')
-await api.heckAI('Hola')
-await api.gptAnon('Hola')
-await api.googleGemma('Hola')
-
-// Con sesión conversacional:
-const s1 = await api.googleGemma('Me llamo Ramón')
-const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
+await cli.youtubeSearch('música relajante')
+await cli.spotifyDownload('https://open.spotify.com/track/...')
+await cli.brat('Hola')
 ```
 
 ---
@@ -93,7 +125,6 @@ const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
 | `facebookdl` | `api.facebookDownload(url, format?)` | Descarga video o audio de Facebook (yt-dlp) |
 | `spotifydl` | `api.spotifyDownload(url)` | Descarga audio de Spotify con portada y letras incrustadas |
 | `pinterestdl` | `api.pinterestDownload(url)` | Descarga imágenes o videos de Pinterest |
-| `mcmods-dl` | `api.mcmodsDownload(slug, opts?)` | Link directo de descarga de un mod de Minecraft (Modrinth) |
 
 ### 🔎 Buscadores
 
@@ -105,7 +136,6 @@ const s2 = await api.googleGemma('¿Cómo me llamo?', s1.result.sessionId)
 | `facebook-search` | `api.facebookSearch(query, limit?)` | Busca posts y videos públicos de Facebook |
 | `pinterestSearch` | `api.pinterestSearch(query, limit?)` | Búsqueda de imágenes en Pinterest |
 | `lyrics-search` | `api.lyricsSearch(query)` | Busca letras de canciones en Lyrics.com |
-| `mcmods-search` | `api.mcmodsSearch(q, opts?)` | Busca mods de Minecraft Java en Modrinth |
 
 ### 🔍 Scrapers & Herramientas
 
@@ -329,7 +359,6 @@ const ipInfo = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
 | `facebook(url, format?)` | Alias de facebookDownload |
 | `spotifyDownload(url)` | Spotify (audio + portada + letras) |
 | `pinterestDownload(url)` | Pinterest (imágenes/videos) |
-| `mcmodsDownload(slug, opts?)` | Mod de Minecraft (Modrinth) |
 
 ### 🔎 Buscadores
 | Método | Descripción |
@@ -340,7 +369,6 @@ const ipInfo = await api.executeScraperSync('iplocation', { ip: '8.8.8.8' })
 | `facebookSearch(query, limit?)` | Busca posts en Facebook |
 | `pinterestSearch(query, limit?)` | Busca imágenes en Pinterest |
 | `lyricsSearch(query)` | Busca letras de canciones |
-| `mcmodsSearch(q, opts?)` | Busca mods de Minecraft |
 
 ### 🔍 Scrapers & Herramientas
 | Método | Descripción |

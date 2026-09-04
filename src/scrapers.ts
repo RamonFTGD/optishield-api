@@ -42,8 +42,6 @@ export const SCRAPERS: ScraperDef[] = [
   // ══════════ 🔎 BUSCADORES ══════════
   { name: 'facebook-search', alias: 'facebookSearch', params: ['query'], optional: ['apikey', 'limit'], group: 'Buscadores', description: 'Busca posts y videos públicos de Facebook' },
   { name: 'lyrics-search', alias: 'lyricsSearch', params: ['query'], optional: ['apikey'], group: 'Buscadores', description: 'Busca letras de canciones en Lyrics.com' },
-  { name: 'mcmods-dl', alias: 'mcmodsDownload', params: ['slug'], optional: ['version', 'loader', 'versionId', 'limit'], group: 'Buscadores', description: 'Link directo de descarga de un mod de Minecraft (Modrinth)' },
-  { name: 'mcmods-search', alias: 'mcmodsSearch', params: ['q'], optional: ['version', 'loader', 'limit', 'index', 'sort'], group: 'Buscadores', description: 'Busca mods de Minecraft Java en Modrinth' },
   { name: 'pinterestSearch', alias: 'pinterestSearch', params: ['query'], optional: ['apikey', 'limit'], group: 'Buscadores', description: 'Búsqueda de imágenes en Pinterest' },
   { name: 'spotify-search', alias: 'spotifySearch', params: ['query'], optional: ['apikey', 'limit'], group: 'Buscadores', description: 'Busca canciones en Spotify por nombre o artista' },
   { name: 'tiktoksearch', alias: 'tiktokSearch', params: ['query'], optional: ['apikey', 'count'], group: 'Buscadores', description: 'Busca videos en TikTok y obtiene links de descarga en HD' },
